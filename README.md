@@ -177,6 +177,30 @@ underweighted because manufacturers measure it inconsistently.
 
 <br>
 
+## Where the mouse data comes from
+
+62 of the 63 entries have been cross-checked against [eloshapes.com](https://www.eloshapes.com/),
+which keeps 1600+ mice measured the same way. **41 entries needed correcting** — the width
+figures especially:
+
+| Mouse | Was | Now |
+|---|---|---|
+| Razer Viper V2 Pro | 57.6 mm wide | **66.0 mm** |
+| Razer DeathAdder V2 | 61.7 mm wide | **70.0 mm** |
+| Corsair Sabre RGB Pro | 61.2 mm wide | **69.0 mm** |
+| VAXEE Outset AX | 126 mm long | **117.4 mm** |
+| Zowie EC1-CW | 128 × 67 × 44 | **130 × 69 × 42** |
+
+That width pattern is the grip-width-vs-widest-point problem in action, and it's exactly
+why the database uses **one source measured one way** rather than the best figure from
+whoever published it. For a recommendation engine, internal comparability matters more
+than matching any single manufacturer's number.
+
+The one unverified entry (HyperX Pulsefire Haste 2, wired) is flagged `ver:false` in the
+file. **Still check the manufacturer before buying** — this database is for comparison.
+
+<br>
+
 ## Running it
 
 ```bash
@@ -207,9 +231,9 @@ recommendations — no measuring needed.
 
 ## Contributing
 
-**Verifying mouse specs is where help is most useful.** All 63 entries in `mice.js` are
-currently `ver:false` — dimensions came from memory and have *not* been cross-checked
-against manufacturer specifications.
+**Adding mice is where help is most useful now.** The database is thinnest at the
+extremes — very small and very large — which is exactly where recommendations are weakest.
+Vertical mice, trackballs and ergonomic outliers aren't represented at all.
 
 ```js
 { id:"logi-gpxs2", brand:"Logitech", name:"G Pro X Superlight 2",
@@ -217,10 +241,10 @@ against manufacturer specifications.
   grips:["claw","fingertip","palm"], price:3, ver:false },
 ```
 
-Check it against the official product page, fix what's wrong, set `ver:true`, link the
-source in your PR. **Width is the field most worth checking** — some makers quote the
-widest point including thumb wings, others quote grip width, and that's a 15 mm difference
-on the same mouse.
+Use [eloshapes.com](https://www.eloshapes.com/) for the figures so the measurement method
+stays consistent with the rest of the database, and link the source in your PR. If you only
+have manufacturer numbers, say so — **width is the field where sources disagree most**, by
+up to 15 mm on the same mouse.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for adding mice, correcting the grip ratios, and
 translations.
@@ -229,7 +253,7 @@ translations.
 
 ## Known limitations
 
-- **Mouse specs are unverified.** Don't buy on this alone.
+- **Specs are third-party, not manufacturer.** Consistent for comparison; confirm before buying.
 - **Grip ratios are unvalidated.** Community guidance, not measurement.
 - **Phones can't do this.** Physics, not a bug. Direct entry is offered instead.
 - **The wrist landmark is user-judged.** The guide helps; it stays the dominant error term.

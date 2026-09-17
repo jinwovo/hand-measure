@@ -1,17 +1,14 @@
 # Contributing
 
-## Verifying mouse specs (most useful)
+## Adding mice (most useful)
 
-Every entry in `mice.js` is currently `ver:false` — dimensions have not been
-cross-checked against manufacturer specifications.
+62 of 63 entries are cross-checked against [eloshapes.com](https://www.eloshapes.com/),
+which measures 1600+ mice the same way. Use that source for new entries so widths stay
+comparable — manufacturers disagree with each other by up to 15mm on the same mouse
+depending on whether they quote widest point or grip width.
 
-1. Open the manufacturer's official product page for the mouse
-2. Compare `l` / `w` / `h` / `g` against the published figures
-3. Fix anything wrong, set `ver:true`
-4. Put the source URL in your pull request
-
-Width is the field most worth checking: some makers quote the widest point
-including thumb wings, others quote grip width. The difference can be 15mm.
+The database is thinnest at the extremes (very small and very large hands) and has no
+vertical mice or trackballs. That is where it is least useful today.
 
 ## Adding a mouse
 
