@@ -674,7 +674,7 @@ const HAND = {
   // 손가락별 세부 조정. 중지(1)는 손 길이 기준축이라 항상 1.0 / 오프셋 0 으로 고정된다.
   fr:[0.862, 1.000, 0.937, 0.690],   // 검지/중지/약지/소지 끝 (중지 길이 대비)
   fo:[0, 0, 0, 0],                   // 손가락 끝 좌우 오프셋 (px) — 벌어진 손가락 대응
-  thumb:{ tu:-0.84, tv:0.20, w:1 },  // 엄지 끝 (tu × 손너비, tv × 너클선 높이) + w = 굵기 배율
+  thumb:{ tu:-0.93, tv:0.80, w:1 },  // 엄지 끝 (tu × 손너비, tv × 너클선 높이) + w = 굵기 배율
 };
 const FR0 = [0.862, 1.000, 0.937, 0.690];
 let fitsArea = true;
@@ -1024,7 +1024,7 @@ function resetHand(){
   HAND.pr = DEF.pr;
   HAND.fr = FR0.slice();
   HAND.fo = [0, 0, 0, 0];
-  HAND.thumb = { tu:-0.84, tv:0.20, w:1 };
+  HAND.thumb = { tu:-0.93, tv:0.80, w:1 };
 
   // 사이드패널(276) / 상단바(74) 를 피한 배치 영역
   const pad = 18 + OFF;
@@ -1155,7 +1155,7 @@ function buildHelpFigure(){
   HAND.L = 250; HAND.W = 250 * DEF.W / DEF.L; HAND.pr = DEF.pr;
   HAND.ang = -Math.PI / 2; HAND.side = 1;           // 왼손 손등, 손가락 위
   HAND.fr = FR0.slice(); HAND.fo = [0, 0, 0, 0];
-  HAND.thumb = { tu:-0.84, tv:0.20, w:1 };
+  HAND.thumb = { tu:-0.93, tv:0.80, w:1 };
   HAND.x = 135; HAND.y = 295;
 
   const ky = fKy(), hw = HAND.W * 0.32;             // 손목 반폭 = 윤곽선의 ww/2
