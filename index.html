@@ -100,6 +100,18 @@
   .seg button:hover{background:var(--s3);color:var(--fg)}
   .seg button.on{background:var(--ac);color:#08101f;font-weight:700}
   .seg button.on:hover{background:var(--ac2)}
+  .qrow{padding:6px 0 14px}
+  .qrow p{margin:0 0 9px;font-size:14px;color:var(--mu)}
+  .qans{display:flex;gap:8px;flex-wrap:wrap}
+  .qans button{font-size:13.5px;padding:9px 16px}
+  .qdone{background:var(--acd);border:1px solid #2c3c6b;border-radius:var(--rs);
+         padding:13px 15px;font-size:14px;color:#c3d1f5}
+  .qdone b{color:var(--ac2)}
+  .searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .searchrow input{flex:1;min-width:190px;max-width:340px}
+  input[type=search]{font:inherit;background:var(--bg);border:1px solid var(--bd2);
+       border-radius:9px;color:var(--fg);padding:10px 13px}
+  input[type=search]:focus{outline:none;border-color:var(--ac)}
   .fld{display:grid;grid-template-columns:60px 1fr;gap:14px;align-items:center;padding:7px 0}
   .fld>label{font-size:13px;color:var(--ft);font-weight:600}
 
@@ -514,6 +526,7 @@
 
     <div class="dist" id="dist"></div>
     <p class="sub" id="distNote" style="margin:12px 0 0"></p>
+    <p class="sub" data-i18n="result.tolerance" style="margin:6px 0 0;opacity:.75"></p>
   </div>
 
   <div class="row" style="margin-top:18px">
@@ -559,7 +572,12 @@
 
   <div class="grips" id="gripGrid"></div>
 
-  <details class="disc" style="margin-top:18px">
+  <details class="disc" id="gripQuiz" style="margin-top:18px">
+    <summary data-i18n="gripq.unsure"></summary>
+    <div class="body" id="quizBody"></div>
+  </details>
+
+  <details class="disc" style="margin-top:12px">
     <summary data-i18n="grip.filterSummary"></summary>
     <div class="body" id="filters"></div>
   </details>
@@ -588,6 +606,10 @@
   </div>
 
   <h3 style="margin:28px 0 12px" data-i18n="rec.listTitle"></h3>
+  <div class="searchrow">
+    <input type="search" id="recSearch" aria-label="search mice">
+    <button class="btn-sm btn-ghost" id="recMore"></button>
+  </div>
   <div id="recList"></div>
 
   <details class="disc">
@@ -675,6 +697,7 @@ function setLang(l){
   LANG = l;
   try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
   applyI18n();
+  delete $("#curPick").dataset.filled;   // 한 번만 채우므로 언어가 바뀌면 다시 짓게 한다
   // 현재 보이는 화면을 다시 그린다 (동적 문자열 반영)
   if(!$("#s-cal").hidden){ renderRefGrid(); renderCal(); }
   if(!$("#s-measure").hidden) renderMeasureUI();
@@ -1653,7 +1676,7 @@ const FILTERS = [
   { k:"shape",  opts:["any","sym","ergo"] },
   { k:"price",  opts:["any","1","2"] },
 ];
-const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any", current:"", fit:"" };
+const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any", current:"", fit:"", showAll:false };
 
 /** 그립별 옆모습 도식.
     마우스 윤곽은 공통이고, 달라지는 것은 (1) 손이 마우스에 얼마나 붙는가
@@ -1711,6 +1734,39 @@ function gripSvg(key){
     "</svg>";
 }
 
+/* 그립은 추천을 가장 크게 흔드는 입력인데 정작 사용자가 가장 모르는 항목이다.
+   정의상의 차이 두 가지만 물으면 세 그립이 갈린다:
+   손바닥 뒤쪽이 닿는가(핑거팁 분리) / 손가락이 펴져 있는가 구부러졌는가(팜 vs 클로) */
+const quiz = { q1:null, q2:null };
+function quizGrip(){
+  if(quiz.q1 === "n") return "fingertip";
+  if(quiz.q1 === "y" && quiz.q2) return quiz.q2 === "flat" ? "palm" : "claw";
+  return null;
+}
+function renderQuiz(){
+  const g = quizGrip();
+  const btn = (k, v, lab, cur) =>
+    '<button class="' + (cur === v ? "btn-pri" : "") + '" data-q="' + k + '" data-v="' + v + '">' +
+    t(lab) + "</button>";
+  let h = '<div class="qrow"><p>' + t("gripq.q1") + '</p><div class="qans">' +
+    btn("q1", "y", "gripq.q1y", quiz.q1) + btn("q1", "n", "gripq.q1n", quiz.q1) + "</div></div>";
+  if(quiz.q1 === "y"){
+    h += '<div class="qrow"><p>' + t("gripq.q2") + '</p><div class="qans">' +
+      btn("q2", "flat", "gripq.q2flat", quiz.q2) + btn("q2", "arch", "gripq.q2arch", quiz.q2) +
+      "</div></div>";
+  }
+  if(g) h += '<div class="qdone">' + t("gripq.answer", { g:gripName(g) }) + "</div>";
+  $("#quizBody").innerHTML = h;
+  $$("#quizBody button[data-q]").forEach(b => b.onclick = () => {
+    quiz[b.dataset.q] = b.dataset.v;
+    if(b.dataset.q === "q1" && b.dataset.v === "n") quiz.q2 = null;
+    const ng = quizGrip();
+    if(ng) pick.grip = ng;
+    renderGripScreen();
+    $("#gripQuiz").open = true;
+  });
+}
+
 function renderGripScreen(){
   $("#gripGrid").innerHTML = Object.keys(GRIPS).map(k =>
     '<button class="gripcard' + (pick.grip === k ? " on" : "") + '" data-grip="' + k + '" type="button">' +
@@ -1726,6 +1782,7 @@ function renderGripScreen(){
   $$("#filters button").forEach(b => b.onclick = () => {
     pick[b.dataset.f] = b.dataset.v; renderGripScreen();
   });
+  renderQuiz();
 }
 
 function targets(){
@@ -1841,12 +1898,23 @@ function renderRec(){
     $("#recList").innerHTML = '<div class="empty">' + t("rec.dbMissing") + "</div>";
     return;
   }
-  const list = recommend();
+  const q = ($("#recSearch").value || "").trim().toLowerCase();
+  const all = recommend();
+  const list = q ? all.filter(r => (r.m.brand + " " + r.m.name).toLowerCase().indexOf(q) >= 0) : all;
+  const limit = (pick.showAll || q) ? list.length : 12;
+  $("#recSearch").placeholder = t("rec.search");
+  $("#recMore").textContent = pick.showAll ? t("rec.showLess") : t("rec.showAll", { n:all.length });
+  $("#recMore").hidden = !!q || all.length <= 12;
+  if(q && !list.length){
+    $("#recList").innerHTML = '<div class="empty">' + t("rec.noMatch") + "</div>";
+    $("#fitPanel").hidden = true; renderFit(null);
+    return;
+  }
   if(!list.length){
     $("#recList").innerHTML = '<div class="empty">' + t("rec.empty") + '</div>';
     return;
   }
-  $("#recList").innerHTML = list.slice(0, 12).map((r, i) => {
+  $("#recList").innerHTML = list.slice(0, limit).map((r, i) => {
     const pct = Math.round(r.score * 100);
     const mine = r.m.id === pick.current;
     return '<div class="mrow' + (i === 0 ? " top" : "") + (mine ? " yours" : "") +
@@ -1880,7 +1948,8 @@ function renderRec(){
 
   const fm = (window.MOUSE_DB || []).find(x => x.id === pick.fit);
   $("#fitPanel").hidden = !fm;
-  if(fm){ $("#fitName").textContent = fm.brand + " " + fm.name; renderFit(fm); }
+  $("#fitName").textContent = fm ? fm.brand + " " + fm.name : "";
+  renderFit(fm);          // fm 이 없으면 내용을 비운다 — 숨기기만 하면 이전 언어가 남는다
 }
 
 /* ============ 화면 전환 ============ */
@@ -1948,6 +2017,8 @@ $("#goGrip").onclick    = () => { show("#s-grip"); renderGripScreen(); };
 $("#gBack").onclick     = () => { show("#s-result"); renderResult(); };
 $("#gNext").onclick     = () => { show("#s-rec"); renderRec(); };
 $("#curPick").onchange  = () => { pick.current = $("#curPick").value; pick.fit = pick.current; renderRec(); };
+$("#recSearch").oninput = () => renderRec();
+$("#recMore").onclick   = () => { pick.showAll = !pick.showAll; renderRec(); };
 $("#recBack").onclick   = () => { show("#s-grip"); renderGripScreen(); };
 $("#recRemeasure").onclick = () => startMeasure(false);
 $("#langBtn").onclick   = () => setLang(LANG === "ko" ? "en" : "ko");
