@@ -271,6 +271,16 @@
   .cmp.good .big{color:var(--mint)} .cmp.mid .big{color:var(--amber)} .cmp.bad .big{color:var(--rose)}
   .cmp .txt{flex:1;min-width:230px;font-size:14px;color:var(--mu);line-height:1.6}
   .cmp .txt b{color:var(--fg)}
+  .mrow{cursor:pointer}
+  .mrow:hover{border-color:var(--bd2)}
+  .mrow.picked{border-color:var(--mint)}
+  .fitname{color:var(--ac2);font-weight:700;text-transform:none;letter-spacing:-.2px;font-size:14px}
+  .fitgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:700px){.fitgrid{grid-template-columns:1fr}}
+  .fitgrid figure{margin:0;background:var(--bg);border:1px solid var(--bd);border-radius:10px;
+                  padding:8px 8px 4px}
+  .fitgrid figcaption{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;
+                      font-weight:700;margin-bottom:4px;padding-left:4px}
   .mrow.yours{border-color:var(--ac)}
   .mrow.yours .fill{background:#6d8fff1c}
   .badge{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
@@ -570,6 +580,11 @@
     <h3 data-i18n="cur.title"></h3>
     <select id="curPick" aria-label="current mouse"></select>
     <div id="curOut"></div>
+  </div>
+
+  <div class="panel" id="fitPanel" style="margin-top:12px" hidden>
+    <h3><span data-i18n="fit.title"></span> <span id="fitName" class="fitname"></span></h3>
+    <div id="fitBox"></div>
   </div>
 
   <h3 style="margin:28px 0 12px" data-i18n="rec.listTitle"></h3>
@@ -1497,6 +1512,128 @@ $("#copyJson").onclick = async () => {
 };
 
 /* =====================================================================
+   마우스 형상 미리보기
+   ---------------------------------------------------------------------
+   DB 에는 3D 형상이 없고 바운딩 박스(l/w/h) + 형상 기술자(hump/flare/curve/tr)뿐이다.
+   3D 모델을 띄우면 그 곡면은 전부 지어낸 것이 되고, 3D 는 도식보다 사실적으로 보여서
+   "없는 정보를 있는 것처럼" 만든다. 그래서 아는 값만으로 위/옆 2면 개략도를 그린다.
+   ===================================================================== */
+
+/** 위에서 본 마우스 외곽. 너비는 너클 부근이 최대이고 앞은 flare, 옆은 curve 로 조절. */
+function mouseTopPath(m, k, cx, cy){
+  const L = m.l * k, W = m.w * k;
+  const fl = (m.flare || 0) / 3;               // -0.67 .. 1
+  const cv = (m.curve || 0) / 2;               // -1 .. 0.5
+  const top = cy - L / 2, bot = cy + L / 2;    // top = 앞(버튼), bot = 뒤
+  const wMax = W / 2;
+  const wFront = wMax * (0.74 + 0.13 * fl);    // 앞쪽 폭
+  const wBack  = wMax * 0.88;                  // 뒤쪽 폭
+  const wMidL  = wMax * (1 + 0.07 * cv);       // 허리 (오목/볼록)
+  const yMid   = cy + L * 0.06;                // 최대폭 위치 (너클 부근)
+  const P = (x, y) => (cx + x).toFixed(1) + " " + y.toFixed(1);
+  // 오른쪽 변: 앞 -> 최대폭 -> 뒤,  왼쪽 변은 대칭. ergo 는 엄지쪽을 살짝 깎는다
+  const asym = m.shape === "ergo" ? wMax * 0.06 : 0;
+  return "M " + P(0, top) +
+    " C " + P(wFront * 0.72, top + L * 0.012) + " " + P(wMidL * 0.99, yMid - L * 0.17) +
+      " " + P(wMidL, yMid) +
+    " C " + P(wMidL, yMid + L * 0.20) + " " + P(wBack, bot - L * 0.13) + " " + P(wBack * 0.62, bot) +
+    " C " + P(wBack * 0.24, bot + L * 0.014) + " " + P(-wBack * 0.24, bot + L * 0.014) +
+      " " + P(-wBack * 0.62, bot) +
+    " C " + P(-wBack, bot - L * 0.13) + " " + P(-(wMidL - asym), yMid + L * 0.20) +
+      " " + P(-(wMidL - asym), yMid) +
+    " C " + P(-(wMidL - asym) * 0.99, yMid - L * 0.17) + " " + P(-wFront * 0.72, top + L * 0.012) +
+      " " + P(0, top) + " Z";
+}
+
+/** 옆에서 본 마우스. 앞(오른쪽)이 낮고 hump 위치에서 가장 높다. */
+function mouseSidePath(m, k, x0, yBase){
+  const L = m.l * k, H = m.h * k;
+  const hp = m.hump == null ? 0.5 : m.hump;    // 0 = 앞, 1 = 뒤
+  const xf = x0 + L, xb = x0;                  // xf = 앞끝, xb = 뒤끝
+  const xh = x0 + L * (1 - hp);                // 험프 x
+  const yh = yBase - H;
+  const P = (x, y) => x.toFixed(1) + " " + y.toFixed(1);
+  return "M " + P(xb, yBase) +
+    " C " + P(xb, yBase - H * 0.62) + " " + P(xh - L * 0.16, yh) + " " + P(xh, yh) +
+    " C " + P(xh + L * 0.22, yh) + " " + P(xf - L * 0.10, yBase - H * 0.40) +
+      " " + P(xf, yBase - H * 0.16) +
+    " L " + P(xf, yBase) + " Z";
+}
+
+/** 손과 마우스를 같은 실제 크기로 나란히 보여준다.
+    정렬 규칙은 "너클선을 마우스 최대폭 위치에 맞춘다" 하나뿐이고, 이건 캡션에 밝힌다.
+    손이 마우스 어디에 얹히는지는 DB 에 없는 정보라 수치로 주장하지 않는다.
+    비교 문구는 추천 엔진이 이미 쓰는 권장 범위 그대로를 쓴다. */
+function renderFit(m){
+  const box = $("#fitBox");
+  if(!m){ box.innerHTML = ""; return; }
+  const mm = measures(), T = targets();
+  const VW = 400, VH = 300, PAD = 16;
+  // 두 그림이 같은 viewBox + 같은 배율을 쓴다. 다르면 나란히 둔 의미가 없다.
+  const k = Math.min((VW - PAD * 2) / Math.max(mm.widthMm * 1.7, m.w),
+                     (VH - PAD * 2) / Math.max(mm.lenMm * 1.02, m.l));
+
+  /* ---- 위에서 본 모습: 마우스를 먼저 깔고 손은 윤곽선만 얹는다 ---- */
+  const save = { x:HAND.x, y:HAND.y, L:HAND.L, W:HAND.W, pr:HAND.pr, ang:HAND.ang,
+                 side:HAND.side, fr:HAND.fr, fo:HAND.fo, thumb:HAND.thumb };
+  HAND.L = mm.lenMm * k; HAND.W = mm.widthMm * k; HAND.pr = DEF.pr;
+  HAND.ang = -Math.PI / 2; HAND.side = 1;
+  HAND.fr = FR0.slice(); HAND.fo = [0, 0, 0, 0]; HAND.thumb = { tu:-0.93, tv:0.80, w:1 };
+  const cx = VW * 0.46, wristY = VH - PAD;
+  HAND.x = cx; HAND.y = wristY;
+  const handD = handPathD();
+  const knuckleY = toStage(0, HAND.pr * HAND.L).y;
+  Object.assign(HAND, save);
+
+  const mL = m.l * k;
+  const mCy = knuckleY - mL / 2 + mL * 0.56;     // 너클선 = 마우스 최대폭 위치
+  const topSvg =
+    '<svg viewBox="0 0 ' + VW + " " + VH + '" width="100%" style="display:block">' +
+    '<path d="' + mouseTopPath(m, k, cx, mCy) + '" fill="#2b3648" stroke="#9db0ce" ' +
+      'stroke-width="2" stroke-linejoin="round"/>' +
+    '<path d="' + handD + '" fill="none" stroke="#3ddc97" stroke-width="2" ' +
+      'stroke-linejoin="round"/>' +
+    '<line x1="' + (cx - mm.widthMm * k / 2 - 10) + '" y1="' + knuckleY + '" x2="' +
+      (cx + Math.max(m.w, mm.widthMm) * k / 2 + 10) + '" y2="' + knuckleY +
+      '" stroke="#ffc24b" stroke-width="1.3" stroke-dasharray="5 4" opacity=".9"/>' +
+    '<text x="' + (VW - 8) + '" y="' + (VH - 6) + '" fill="#3ddc97" font-size="10.5" ' +
+      'font-weight="700" text-anchor="end">' + t("fit.handLab") + "</text>" +
+    "</svg>";
+
+  /* ---- 옆에서 본 모습: 마우스 프로필만. 손과 비교할 근거가 없는 축이다 ---- */
+  const sBase = VH / 2 + m.h * k / 2 + 10, sx = (VW - mL) / 2;
+  const hp = m.hump == null ? 0.5 : m.hump;
+  const humpX = sx + mL * (1 - hp);
+  const sideSvg =
+    '<svg viewBox="0 0 ' + VW + " " + VH + '" width="100%" style="display:block">' +
+    '<line x1="' + (sx - 18) + '" y1="' + sBase + '" x2="' + (sx + mL + 18) + '" y2="' + sBase +
+      '" stroke="#2c3444" stroke-width="2" stroke-linecap="round"/>' +
+    '<path d="' + mouseSidePath(m, k, sx, sBase) + '" fill="#2b3648" stroke="#9db0ce" ' +
+      'stroke-width="2" stroke-linejoin="round"/>' +
+    '<line x1="' + humpX + '" y1="' + (sBase - m.h * k) + '" x2="' + humpX + '" y2="' +
+      (sBase - m.h * k - 16) + '" stroke="#ffc24b" stroke-width="1.4"/>' +
+    '<text x="' + humpX + '" y="' + (sBase - m.h * k - 21) + '" fill="#ffc24b" font-size="10" ' +
+      'font-weight="700" text-anchor="middle">' + m.h + "mm</text>" +
+    '<text x="' + (sx + mL / 2) + '" y="' + (sBase + 16) + '" fill="#9db0ce" font-size="10.5" ' +
+      'text-anchor="middle">' + m.l + "mm</text>" +
+    "</svg>";
+
+  const band = (v, b, key) => {
+    const inb = v >= b[0] - 0.5 && v <= b[1] + 0.5;
+    return '<span class="chip ' + (inb ? "ok" : "bad") + '">' + t("chip." + key) + " " + v +
+           "mm · " + Math.round(b[0]) + "–" + Math.round(b[1]) + "</span>";
+  };
+  box.innerHTML =
+    '<div class="fitgrid">' +
+      '<figure><figcaption>' + t("fit.top") + "</figcaption>" + topSvg + "</figure>" +
+      '<figure><figcaption>' + t("fit.side") + "</figcaption>" + sideSvg + "</figure>" +
+    "</div>" +
+    '<div class="mwhy" style="margin-top:10px">' +
+      band(m.l, T.l, "len") + band(m.w, T.w, "wid") + band(m.h, T.h, "hei") + "</div>" +
+    '<p class="sub" style="margin:12px 0 0;font-size:12px;line-height:1.65">' + t("fit.note") + "</p>";
+}
+
+/* =====================================================================
    5~6. 그립 선택 + 추천 엔진
    ---------------------------------------------------------------------
    기준: 마우스 길이/높이는 "손 길이" 대비, 너비는 "손 너비" 대비 비율로 본다.
@@ -1516,7 +1653,7 @@ const FILTERS = [
   { k:"shape",  opts:["any","sym","ergo"] },
   { k:"price",  opts:["any","1","2"] },
 ];
-const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any", current:"" };
+const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any", current:"", fit:"" };
 
 /** 그립별 옆모습 도식.
     마우스 윤곽은 공통이고, 달라지는 것은 (1) 손이 마우스에 얼마나 붙는가
@@ -1712,7 +1849,8 @@ function renderRec(){
   $("#recList").innerHTML = list.slice(0, 12).map((r, i) => {
     const pct = Math.round(r.score * 100);
     const mine = r.m.id === pick.current;
-    return '<div class="mrow' + (i === 0 ? " top" : "") + (mine ? " yours" : "") + '">' +
+    return '<div class="mrow' + (i === 0 ? " top" : "") + (mine ? " yours" : "") +
+      (r.m.id === pick.fit ? " picked" : "") + '" data-fit="' + r.m.id + '" tabindex="0">' +
       '<div class="fill" style="width:' + pct + '%"></div>' +
       '<div class="mhead"><span class="bd">' + r.m.brand + '</span>' +
       '<span class="nm">' + r.m.name + '</span>' +
@@ -1723,6 +1861,26 @@ function renderRec(){
         t(r.m.wl ? "spec.wireless" : "spec.wired") + "</div>" +
       '<div class="mwhy">' + chips(r) + "</div></div>";
   }).join("");
+
+  // 목록의 아무 줄이나 누르면 그 마우스를 내 손 위에 얹어본다
+  const openFit = id => {
+    pick.fit = (pick.fit === id ? "" : id);
+    renderRec();
+    if(pick.fit){
+      const el = $('.mrow[data-fit="' + pick.fit + '"]');
+      if(el) el.scrollIntoView({ block:"nearest" });
+    }
+  };
+  $$("#recList .mrow").forEach(el => {
+    el.onclick = () => openFit(el.dataset.fit);
+    el.onkeydown = e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openFit(el.dataset.fit); }
+    };
+  });
+
+  const fm = (window.MOUSE_DB || []).find(x => x.id === pick.fit);
+  $("#fitPanel").hidden = !fm;
+  if(fm){ $("#fitName").textContent = fm.brand + " " + fm.name; renderFit(fm); }
 }
 
 /* ============ 화면 전환 ============ */
@@ -1789,7 +1947,7 @@ $("#rRecal").onclick    = () => { show("#s-cal"); renderRefGrid(); renderCal(); 
 $("#goGrip").onclick    = () => { show("#s-grip"); renderGripScreen(); };
 $("#gBack").onclick     = () => { show("#s-result"); renderResult(); };
 $("#gNext").onclick     = () => { show("#s-rec"); renderRec(); };
-$("#curPick").onchange  = () => { pick.current = $("#curPick").value; renderRec(); };
+$("#curPick").onchange  = () => { pick.current = $("#curPick").value; pick.fit = pick.current; renderRec(); };
 $("#recBack").onclick   = () => { show("#s-grip"); renderGripScreen(); };
 $("#recRemeasure").onclick = () => startMeasure(false);
 $("#langBtn").onclick   = () => setLang(LANG === "ko" ? "en" : "ko");

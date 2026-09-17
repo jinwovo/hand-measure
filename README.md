@@ -97,6 +97,28 @@ Pick your current mouse and it's scored against your hand with the specific numb
 Your mouse is then tagged in the ranked list so you can see exactly what beats it and by
 how much.
 
+### Seeing it on your hand
+
+Click any mouse in the list and it's drawn **at life size against your own hand outline**.
+
+<div align="center">
+<img src="docs/img/07-fit.jpg" width="880" alt="Fit preview: a mouse footprint drawn under a life-size hand outline, plus its side profile">
+</div>
+
+The top view overlays the mouse footprint under your measured hand, aligning your knuckle
+line with the mouse's widest point. The side view shows its profile, with the hump where
+the manufacturer actually puts it.
+
+**Why not a 3D model?** Because the database holds bounding-box dimensions and shape
+attributes — not geometry. A 3D render would have to invent every curve, and 3D reads as
+far more authoritative than a diagram, so it would present fiction as measurement. These
+outlines are schematics built strictly from published numbers, and the caption says so.
+
+The same reasoning killed a "your fingertips overhang by 47mm" readout that an earlier
+version showed: it depended on a made-up constant for where a hand sits on a mouse. The
+comparison now uses the recommendation engine's own target bands, which are at least an
+honest model.
+
 <br>
 
 ## Design notes
