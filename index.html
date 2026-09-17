@@ -139,12 +139,14 @@
   /* ---------- calibration ---------- */
   .refbar{margin-bottom:20px}
   .bleed{width:100%}
-  #calStage{position:relative;min-height:240px;padding:34px 0 16px 46px;overflow:hidden}
-  #calGuide{position:absolute;left:46px;top:10px;bottom:10px;width:2px;
-            background:linear-gradient(180deg,transparent,var(--ac) 12%,var(--ac) 88%,transparent);
-            opacity:.6;pointer-events:none}
-  #calGuide::before{content:"";position:absolute;left:-4px;top:0;width:10px;height:2px;background:var(--ac)}
-  #calGuide::after{content:"";position:absolute;left:-4px;bottom:0;width:10px;height:2px;background:var(--ac)}
+  #calStage{position:relative;min-height:250px;padding:38px 0 18px;overflow:hidden}
+  #calGuide{position:absolute;top:8px;bottom:8px;width:2px;background:var(--ac);
+            box-shadow:0 0 12px #6d8fffaa;pointer-events:none}
+  #calGuide::before,#calGuide::after{content:"";position:absolute;left:-7px;width:16px;height:3px;
+            background:var(--ac);border-radius:2px}
+  #calGuide::before{top:0} #calGuide::after{bottom:0}
+  #calGuideLab{position:absolute;top:10px;font-size:11px;font-weight:700;color:var(--ac2);
+               white-space:nowrap;pointer-events:none;letter-spacing:.2px}
   #calShape{position:relative;background:linear-gradient(145deg,#fdfdff,#e4e8f0);border-radius:6px;
             box-shadow:0 0 0 1px #ffffff40,0 18px 44px #00000088}
   #calShape.circ{border-radius:50%}
@@ -171,6 +173,7 @@
   #s-measure{position:fixed;inset:0;z-index:60;background:var(--bg);
              touch-action:none;user-select:none;-webkit-user-select:none}
   #stage{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #stage:focus-visible{outline:2px solid var(--ac);outline-offset:-3px}
   #stage.grabbing{cursor:grabbing}
   #mbar{position:absolute;inset:0 0 auto 0;height:62px;z-index:3;background:#0b0d12e6;
         border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px;
@@ -259,6 +262,21 @@
   ol.steps li{margin-bottom:10px}
   ul.tight{margin:0;padding-left:19px;color:var(--mu)}
   ul.tight li{margin-bottom:7px}
+  select{font:inherit;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
+          color:var(--fg);padding:11px 13px;width:100%;max-width:430px;cursor:pointer}
+  .cmp{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .cmp .big{font-size:38px;font-weight:760;letter-spacing:-1.6px;line-height:1;
+            font-variant-numeric:tabular-nums}
+  .cmp .big small{font-size:14px;color:var(--ft);font-weight:600;letter-spacing:0}
+  .cmp.good .big{color:var(--mint)} .cmp.mid .big{color:var(--amber)} .cmp.bad .big{color:var(--rose)}
+  .cmp .txt{flex:1;min-width:230px;font-size:14px;color:var(--mu);line-height:1.6}
+  .cmp .txt b{color:var(--fg)}
+  .mrow.yours{border-color:var(--ac)}
+  .mrow.yours .fill{background:#6d8fff1c}
+  .badge{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+         background:var(--ac);color:#08101f;padding:2px 7px;border-radius:5px}
+  button:focus-visible,select:focus-visible,summary:focus-visible,input:focus-visible{
+    outline:2px solid var(--ac);outline-offset:2px}
   input[type=number]{font:inherit;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
                      color:var(--fg);padding:10px 13px;width:118px;font-variant-numeric:tabular-nums}
   input[type=number]:focus{outline:none;border-color:var(--ac)}
@@ -363,7 +381,7 @@
 </div>
 
 <div class="bleed">
-  <div id="calStage"><div id="calGuide"></div><div id="calShape"><div id="calGrip" tabindex="0"></div></div></div>
+  <div id="calStage"><div id="calGuide"></div><div id="calGuideLab"></div><div id="calShape"><div id="calGrip" tabindex="0"></div></div></div>
 </div>
 
 <div class="page">
@@ -413,7 +431,7 @@
 
 <!-- ============== 2. MEASURE (fullscreen canvas) ============== -->
 <section id="s-measure" class="screen" hidden>
-  <svg id="stage"></svg>
+  <svg id="stage" role="application" tabindex="0" aria-label="hand outline editor"></svg>
   <div id="mbar">
     <div class="ttl" data-i18n="measure.title"></div>
     <div class="hint" data-i18n="measure.hint"></div>
@@ -455,6 +473,7 @@
       <button class="btn-sm btn-ghost" id="mReset" data-i18n="measure.reset"></button>
     </div>
 
+    <p class="sub" style="font-size:11.5px;line-height:1.75;margin:0" data-i18n-html="kbd.hint"></p>
     <div id="fitWarn" class="note warn" hidden style="font-size:12.5px;padding:11px 13px;margin:0"></div>
 
     <div class="spacer"></div>
@@ -546,6 +565,13 @@
 <section id="s-rec" class="screen" hidden><div class="page">
   <h1 data-i18n="rec.h1"></h1>
   <div class="panel" id="recRange"></div>
+
+  <div class="panel" style="margin-top:12px">
+    <h3 data-i18n="cur.title"></h3>
+    <select id="curPick" aria-label="current mouse"></select>
+    <div id="curOut"></div>
+  </div>
+
   <h3 style="margin:28px 0 12px" data-i18n="rec.listTitle"></h3>
   <div id="recList"></div>
 
@@ -607,7 +633,7 @@
 
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const CAL_KEY = "hm.cal.v1";
+const CAL_KEY = "hm.cal.v2";
 const LANG_KEY = "hm.lang.v1";
 
 /* ---------- i18n ---------- */
@@ -700,33 +726,42 @@ function guessPxPerMm(){
 }
 
 /* ============ 캘리브레이션 저장 / 복원 ============ */
+/* 보정값은 모니터마다 다르다. 하나만 저장하면 듀얼 모니터에서 서로 덮어쓴다.
+   화면 서명을 키로 하는 맵에 담아, 모니터를 오가도 각자의 값이 살아 있게 한다. */
+function loadAllCal(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CAL_KEY) || "null");
+    if(raw && raw.byScreen) return raw.byScreen;
+    const old = JSON.parse(localStorage.getItem("hm.cal.v1") || "null");   // v1 마이그레이션
+    if(old && old.pxPerMm && old.sig){ const m = {}; m[old.sig] = old; return m; }
+  }catch(e){}
+  return {};
+}
 function saveCal(){
   try{
-    localStorage.setItem(CAL_KEY, JSON.stringify({
-      pxPerMm:st.pxPerMm, dpr:devicePixelRatio, sig:screenSig(),
-      ref:st.ref, at:new Date().toISOString()
-    }));
+    const all = loadAllCal();
+    all[screenSig()] = { pxPerMm:st.pxPerMm, dpr:devicePixelRatio, sig:screenSig(),
+                         ref:st.ref, at:new Date().toISOString() };
+    localStorage.setItem(CAL_KEY, JSON.stringify({ v:2, byScreen:all }));
   }catch(e){ /* 시크릿 모드 등 — 무시 */ }
 }
-function loadCal(){
-  try{ return JSON.parse(localStorage.getItem(CAL_KEY) || "null"); }
-  catch(e){ return null; }
-}
+function loadCal(){ return loadAllCal()[screenSig()] || null; }
 
 /** pxPerMm 는 브라우저 줌 / 다른 모니터, 이 두 경우에만 깨진다. */
 function checkDrift(){
-  const c = loadCal();
-  if(!c || !st.pxPerMm) return;
-  const dprChanged = Math.abs(c.dpr - devicePixelRatio) > 0.005;
-  const sigChanged = c.sig !== screenSig();
-  if(dprChanged || sigChanged){
-    $("#zoomMsg").innerHTML = sigChanged ? t("warn.monitor")
-      : t("warn.zoom", { a:c.dpr, b:devicePixelRatio });
+  const c = loadCal();                       // 현재 모니터에 저장된 보정값
+  if(!c){ $("#zoomWarn").hidden = true; return; }   // 처음 보는 모니터 — 경고 대상이 아니다
+  st.pxPerMm = c.pxPerMm;                    // 모니터를 옮겼다면 그 모니터 값으로 전환
+  st.ref = REFS[c.ref] ? c.ref : st.ref;
+  st.widthPx = REFS[st.ref].w * st.pxPerMm;
+  if(Math.abs(c.dpr - devicePixelRatio) > 0.005){
+    $("#zoomMsg").innerHTML = t("warn.zoom", { a:c.dpr, b:devicePixelRatio });
     $("#zoomWarn").hidden = false;
   }else{
     $("#zoomWarn").hidden = true;
   }
 }
+
 $("#zoomIgnore").onclick = () => { $("#zoomWarn").hidden = true; };
 $("#zoomRecal").onclick  = () => { $("#zoomWarn").hidden = true; show("#s-cal"); renderRefGrid(); renderCal(); };
 
@@ -747,8 +782,10 @@ function renderCal(){
   const r = REFS[st.ref];
   const stage = $("#calStage"), shape = $("#calShape");
 
-  // 화면 전체 폭까지 늘릴 수 있어야 한다 (칼럼 폭에 묶으면 큰 기준물을 못 맞춤)
-  const maxW = Math.max(60, Math.min(stage.clientWidth, innerWidth - 24) - 46);
+  // 왼쪽 끝은 고정돼 있어야 실물과 대보기 쉽다. 기본은 본문 칼럼에 맞춰 붙이고,
+  // 큰 기준물이 들어갈 폭이 모자랄 때만 왼쪽으로 밀어 자리를 만든다.
+  const MIN_LEFT = 22, RIGHT_PAD = 46;       // RIGHT_PAD: 드래그 손잡이 여유
+  const maxW = Math.max(60, innerWidth - MIN_LEFT - RIGHT_PAD);
   const atMax = st.widthPx >= maxW - 1;
   st.widthPx = clamp(st.widthPx, 40, maxW);
   st.pxPerMm = st.widthPx / r.w;
@@ -761,6 +798,16 @@ function renderCal(){
   }
 
   $("#customRow").hidden = !r.custom;
+
+  // 칼럼 위치는 계산하지 말고 실측한다 — 스크롤바 폭 때문에 innerWidth 기준 계산은 어긋난다
+  const page = $("#s-cal .page");
+  const colLeft = Math.max(MIN_LEFT, Math.round(page.getBoundingClientRect().left) + 24);
+  const left = Math.max(MIN_LEFT, Math.min(colLeft, innerWidth - st.widthPx - RIGHT_PAD));
+  stage.style.paddingLeft   = left + "px";
+  $("#calGuide").style.left = left + "px";
+  const gl = $("#calGuideLab");
+  gl.style.left = (left + 12) + "px";
+  gl.textContent = t("cal.guideLab");
 
   shape.className = r.shape === "circle" ? "circ" : r.shape === "line" ? "line" : "";
   shape.style.width  = st.widthPx + "px";
@@ -1329,6 +1376,19 @@ stageEl.addEventListener("pointercancel", endDrag);
 addEventListener("keydown", e => {
   if(!$("#help").hidden && e.key === "Escape"){ $("#help").hidden = true; return; }
   if($("#s-measure").hidden) return;
+
+  // Tab 으로 손잡이 순회 — 마우스 없이도 측정할 수 있어야 한다
+  if(e.key === "Tab" && handles.length){
+    e.preventDefault();
+    const ids = handles.map(h => h.id);
+    const i = ids.indexOf(sel);
+    sel = ids[e.shiftKey ? (i <= 0 ? ids.length - 1 : i - 1)
+                         : (i < 0 || i === ids.length - 1 ? 0 : i + 1)];
+    renderMeasureUI();
+    return;
+  }
+  if(e.key === "Escape" && sel){ sel = null; renderMeasureUI(); return; }
+
   const d = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
   if(!d) return;
   e.preventDefault();
@@ -1456,7 +1516,7 @@ const FILTERS = [
   { k:"shape",  opts:["any","sym","ergo"] },
   { k:"price",  opts:["any","1","2"] },
 ];
-const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any" };
+const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any", current:"" };
 
 /** 그립별 옆모습 도식.
     마우스 윤곽은 공통이고, 달라지는 것은 (1) 손이 마우스에 얼마나 붙는가
@@ -1579,6 +1639,52 @@ function chips(r){
   return out.map(c => '<span class="chip ' + c.c + '">' + c.t + "</span>").join("");
 }
 
+/** 지금 쓰는 마우스가 내 손에 맞는지 — 사람들이 실제로 가장 궁금해하는 질문.
+    같은 점수 함수를 쓰되, 어느 치수가 얼마나 벗어났는지 말로 풀어준다. */
+function renderCurrent(){
+  const DB = window.MOUSE_DB || [];
+  const sel = $("#curPick");
+  if(!sel.dataset.filled && DB.length){
+    const byBrand = {};
+    DB.forEach(m => { (byBrand[m.brand] = byBrand[m.brand] || []).push(m); });
+    sel.innerHTML = '<option value="">' + t("cur.none") + "</option>" +
+      Object.keys(byBrand).sort().map(b =>
+        '<optgroup label="' + b + '">' + byBrand[b].map(m =>
+          '<option value="' + m.id + '">' + m.name + " · " + m.l + "×" + m.w + "×" + m.h +
+          "mm</option>").join("") + "</optgroup>").join("");
+    sel.dataset.filled = "1";
+  }
+  sel.value = pick.current || "";
+
+  const m = DB.find(x => x.id === pick.current);
+  const out = $("#curOut");
+  if(!m){ out.innerHTML = ""; return; }
+
+  const T = targets();
+  const sl = bandScore(m.l, T.l[0], T.l[1]), sh = bandScore(m.h, T.h[0], T.h[1]),
+        sw = bandScore(m.w, T.w[0], T.w[1]);
+  const sg = (m.grips || []).indexOf(pick.grip) >= 0 ? 1 : 0;
+  const score = Math.round((0.52 * sl + 0.22 * sh + 0.20 * sw + 0.06 * sg) * 100);
+
+  const off = [];
+  const chk = (v, band, dim) => {
+    if(v > band[1] + 0.5)      off.push(t("cur.over",  { d:t("chip." + dim), n:f1(v - band[1]) }));
+    else if(v < band[0] - 0.5) off.push(t("cur.under", { d:t("chip." + dim), n:f1(band[0] - v) }));
+  };
+  chk(m.l, T.l, "len"); chk(m.h, T.h, "hei"); chk(m.w, T.w, "wid");
+
+  const cls = score >= 85 ? "good" : score >= 70 ? "mid" : "bad";
+  const verdict = score >= 85 ? t("cur.fits") : score >= 70 ? t("cur.okish") : t("cur.poor");
+  out.innerHTML =
+    '<div class="cmp ' + cls + '">' +
+      '<div><div class="big">' + score + '<small>%</small></div>' +
+      '<div class="sub" style="margin-top:2px">' + t("cur.score") + "</div></div>" +
+      '<div class="txt">' + verdict + " " +
+        (off.length ? off.join(" · ") + ". " + (score < 85 ? t("cur.betterBelow") : "")
+                    : t("cur.allIn")) +
+      "</div></div>";
+}
+
 function renderRec(){
   const T = targets(), m = measures(), g = GRIPS[pick.grip];
   const rg = (b, u) => Math.round(b[0]) + "~" + Math.round(b[1]) + "<small> " + (u || "mm") + "</small>";
@@ -1592,6 +1698,12 @@ function renderRec(){
       '<div><div class="k">' + t("rec.hei") + '</div><div class="v">' + rg(T.h) + "</div></div>" +
     "</div>";
 
+  renderCurrent();
+
+  if(!(window.MOUSE_DB || []).length){        // mice.js 로드 실패 시 빈 목록 대신 원인 안내
+    $("#recList").innerHTML = '<div class="empty">' + t("rec.dbMissing") + "</div>";
+    return;
+  }
   const list = recommend();
   if(!list.length){
     $("#recList").innerHTML = '<div class="empty">' + t("rec.empty") + '</div>';
@@ -1599,10 +1711,13 @@ function renderRec(){
   }
   $("#recList").innerHTML = list.slice(0, 12).map((r, i) => {
     const pct = Math.round(r.score * 100);
-    return '<div class="mrow' + (i === 0 ? " top" : "") + '">' +
+    const mine = r.m.id === pick.current;
+    return '<div class="mrow' + (i === 0 ? " top" : "") + (mine ? " yours" : "") + '">' +
       '<div class="fill" style="width:' + pct + '%"></div>' +
       '<div class="mhead"><span class="bd">' + r.m.brand + '</span>' +
-      '<span class="nm">' + r.m.name + '</span><span class="pc">' + pct + "%</span></div>" +
+      '<span class="nm">' + r.m.name + '</span>' +
+      (mine ? '<span class="badge">' + t("cur.yours") + "</span>" : "") +
+      '<span class="pc">' + pct + "%</span></div>" +
       '<div class="mspec">' + r.m.l + " × " + r.m.w + " × " + r.m.h + " mm · " + r.m.g + "g · " +
         t(r.m.shape === "sym" ? "spec.sym" : "spec.ergo") + " · " +
         t(r.m.wl ? "spec.wireless" : "spec.wired") + "</div>" +
@@ -1674,6 +1789,7 @@ $("#rRecal").onclick    = () => { show("#s-cal"); renderRefGrid(); renderCal(); 
 $("#goGrip").onclick    = () => { show("#s-grip"); renderGripScreen(); };
 $("#gBack").onclick     = () => { show("#s-result"); renderResult(); };
 $("#gNext").onclick     = () => { show("#s-rec"); renderRec(); };
+$("#curPick").onchange  = () => { pick.current = $("#curPick").value; renderRec(); };
 $("#recBack").onclick   = () => { show("#s-grip"); renderGripScreen(); };
 $("#recRemeasure").onclick = () => startMeasure(false);
 $("#langBtn").onclick   = () => setLang(LANG === "ko" ? "en" : "ko");

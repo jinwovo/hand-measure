@@ -73,7 +73,7 @@ smaller relative error), plus a **custom length** for anything you can measure.
 | **1 · Calibrate** | Match a real object once per monitor. Saved to `localStorage` and auto-invalidated if zoom or display changes. |
 | **2 · Measure** | A life-size hand outline appears. Drag three points — wrist, middle fingertip, width. Everything else is cosmetic. |
 | **3 · Pick your grip** | Palm, claw or fingertip. Shifts ideal mouse length by >15 mm for the *same* hand. |
-| **4 · Get dimensions** | A target length/width/height range, plus ranked models from a 63-mouse database. |
+| **4 · Get dimensions** | A target length/width/height range, plus ranked models from a 63-mouse database — and a verdict on the mouse you already own. |
 
 <br>
 
@@ -86,6 +86,16 @@ smaller relative error), plus a **custom length** for anything you can measure.
 <br>
 
 **The range is the real output.** It works for mice the database has never heard of.
+
+### "Is the mouse I already have wrong for me?"
+
+That's the question most people actually arrive with, so it gets answered directly.
+Pick your current mouse and it's scored against your hand with the specific numbers:
+
+> **74%** — This mostly fits. Length is 0.6mm too large · Width is 8.8mm too large.
+
+Your mouse is then tagged in the ranked list so you can see exactly what beats it and by
+how much.
 
 <br>
 
@@ -187,7 +197,7 @@ python -m http.server 8000   # then open http://127.0.0.1:8000
 | File | What it is |
 |---|---|
 | `index.html` | The whole app — markup, styles, geometry, recommendation engine |
-| `i18n.js` | String dictionary, English + Korean (190 keys each) |
+|  `i18n.js` | String dictionary, English + Korean (219 keys each) |
 | `mice.js` | Mouse specification database |
 
 **Results are links.** `index.html#len=191&wid=88&grip=claw` jumps straight to the
@@ -224,6 +234,19 @@ translations.
 - **Phones can't do this.** Physics, not a bug. Direct entry is offered instead.
 - **The wrist landmark is user-judged.** The guide helps; it stays the dominant error term.
 - **Palm length is informational.** Not used in scoring yet.
+
+<br>
+
+## Accessibility & details
+
+- **Keyboard operable.** <kbd>Tab</kbd> cycles the handles, <kbd>arrows</kbd> nudge 1px
+  (<kbd>Shift</kbd> 5px), <kbd>Esc</kbd> deselects. With nothing selected, arrows pan the
+  whole hand. Visible focus rings throughout.
+- **Per-monitor calibration.** Calibrations are stored keyed by display signature, so a
+  dual-monitor setup keeps one per screen instead of overwriting. Browser zoom changes are
+  detected and flagged.
+- **Fails loudly, not silently.** If `mice.js` doesn't load, you get an explanation rather
+  than an empty list — the target dimensions still work.
 
 <br>
 
