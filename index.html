@@ -1,0 +1,1731 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>손 크기 측정 — 내게 맞는 마우스 찾기</title>
+<meta name="description" content="모니터에 손을 대고 실제 크기 윤곽선에 맞추면 손 길이·너비를 mm로 재고, 그립 방식에 맞는 마우스를 추천합니다. Measure your hand against your monitor and find the mouse that fits.">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hand Measure — find the mouse that fits you">
+<meta property="og:description" content="Measure your hand against your monitor, then get mouse dimensions that actually fit your grip.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d12'/%3E%3Cpath d='M9 25V14a2 2 0 1 1 4 0V8a2 2 0 1 1 4 0v6a2 2 0 1 1 4 0v-3a2 2 0 1 1 4 0v12a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z' fill='none' stroke='%236d8fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0d12; --s1:#12161f; --s2:#191e2a; --s3:#212736;
+    --bd:#242b39; --bd2:#333c50;
+    --fg:#eef1f7; --mu:#98a3b8; --ft:#5f6a82;
+    --ac:#6d8fff; --ac2:#9ab4ff; --acd:#16203c;
+    --mint:#3ddc97; --amber:#ffc24b; --rose:#ff6f83;
+    --r:14px; --rs:10px;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  /* hidden 은 UA 기본값이 display:none 이라, display 를 명시한 요소(.row 등)에서 무력화된다 */
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--fg);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",
+         "Apple SD Gothic Neo","Noto Sans KR",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  ::selection{background:var(--ac);color:#0b0d12}
+
+  /* ---------- type ---------- */
+  .display{font-size:clamp(38px,6vw,54px);line-height:1;font-weight:760;
+           letter-spacing:-2.4px;font-variant-numeric:tabular-nums}
+  h1{font-size:30px;line-height:1.22;margin:0 0 8px;letter-spacing:-.9px;font-weight:720}
+  h2{font-size:19px;margin:0 0 8px;letter-spacing:-.4px;font-weight:700}
+  h3{font-size:12px;margin:0 0 12px;color:var(--ft);letter-spacing:1.1px;
+     font-weight:700;text-transform:uppercase}
+  p{margin:0 0 14px;color:var(--mu)}
+  .lead{font-size:16.5px;color:var(--mu);margin-bottom:26px;max-width:58ch}
+  .sub{font-size:13.5px;color:var(--ft)}
+  b,strong{color:var(--fg);font-weight:650}
+  kbd{font:600 11.5px/1 var(--mono);background:var(--s3);border:1px solid var(--bd2);
+      border-bottom-width:2px;border-radius:5px;padding:3px 6px;color:var(--mu)}
+  a{color:var(--ac2)}
+
+  /* ---------- layout ---------- */
+  .page{max-width:760px;margin:0 auto;padding:0 24px 110px}
+  .screen[hidden]{display:none!important}
+  .stack>*+*{margin-top:12px}
+
+  /* ---------- stepper ---------- */
+  #stepper{position:sticky;top:0;z-index:40;background:#0b0d12e8;backdrop-filter:blur(10px);
+           border-bottom:1px solid var(--bd);margin-bottom:38px}
+  #stepper .in{max-width:760px;margin:0 auto;padding:16px 24px;display:flex;gap:6px;align-items:center}
+  .stp{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .stp i{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--s3);
+         color:var(--ft);font:700 11px/22px var(--mono);text-align:center;font-style:normal;
+         transition:.2s}
+  .stp span{font-size:12.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stp.on i{background:var(--ac);color:#0b0d12}
+  .stp.on span{color:var(--fg);font-weight:650}
+  .stp.done i{background:var(--mint);color:#06281b}
+  .stp.done span{color:var(--mu)}
+  .stp em{flex:1;height:1px;background:var(--bd);margin:0 2px;font-style:normal}
+  @media(max-width:720px){ .stp span{display:none} }
+
+  /* ---------- surfaces ---------- */
+  .panel{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:22px}
+  .panel.tight{padding:16px 18px}
+  .panel+.panel{margin-top:12px}
+  .hr{height:1px;background:var(--bd);margin:22px 0}
+
+  /* ---------- buttons ---------- */
+  button{font:inherit;font-weight:620;cursor:pointer;border-radius:var(--rs);
+         border:1px solid var(--bd2);background:var(--s2);color:var(--fg);
+         padding:11px 18px;transition:.13s;letter-spacing:-.1px}
+  button:hover:not(:disabled){border-color:var(--bd2);background:var(--s3)}
+  button:active:not(:disabled){transform:translateY(1px)}
+  button:disabled{opacity:.34;cursor:not-allowed}
+  .btn-pri{background:var(--ac);border-color:var(--ac);color:#08101f;font-weight:700}
+  .btn-pri:hover:not(:disabled){background:var(--ac2);border-color:var(--ac2)}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--mu)}
+  .btn-ghost:hover:not(:disabled){background:var(--s2);color:var(--fg)}
+  .btn-sm{padding:7px 13px;font-size:13px;border-radius:8px}
+  .btn-lg{padding:14px 26px;font-size:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row.end{justify-content:flex-end}
+  .spacer{flex:1}
+  .nav{display:flex;gap:10px;align-items:center;margin-top:28px}
+
+  /* ---------- segmented control ---------- */
+  .seg{display:inline-flex;background:var(--s2);border:1px solid var(--bd);
+       border-radius:11px;padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{background:transparent;border:0;padding:7px 14px;border-radius:8px;
+              font-size:13.5px;font-weight:600;color:var(--mu)}
+  .seg button:hover{background:var(--s3);color:var(--fg)}
+  .seg button.on{background:var(--ac);color:#08101f;font-weight:700}
+  .seg button.on:hover{background:var(--ac2)}
+  .fld{display:grid;grid-template-columns:60px 1fr;gap:14px;align-items:center;padding:7px 0}
+  .fld>label{font-size:13px;color:var(--ft);font-weight:600}
+
+  /* ---------- disclosure ---------- */
+  details.disc{border:1px solid var(--bd);border-radius:var(--rs);background:var(--s1);
+               margin-top:12px;overflow:hidden}
+  details.disc>summary{cursor:pointer;padding:12px 16px;font-size:13.5px;color:var(--mu);
+                       font-weight:620;list-style:none;display:flex;align-items:center;gap:8px}
+  details.disc>summary::-webkit-details-marker{display:none}
+  details.disc>summary::before{content:"›";font-size:17px;color:var(--ft);transition:.15s;
+                               display:inline-block;line-height:1}
+  details.disc[open]>summary::before{transform:rotate(90deg)}
+  details.disc>summary:hover{color:var(--fg);background:var(--s2)}
+  details.disc .body{padding:4px 16px 16px;font-size:13.5px;color:var(--mu)}
+  details.disc .body p:last-child{margin-bottom:0}
+
+  /* ---------- callout ---------- */
+  .note{font-size:13.5px;color:var(--mu);padding:12px 15px;border-radius:var(--rs);
+        background:var(--s2);border:1px solid var(--bd);margin:14px 0}
+  .note.warn{background:#2a200c;border-color:#5c4718;color:#f0d9a6}
+  .note.warn b{color:var(--amber)}
+  .note.info{background:var(--acd);border-color:#2c3c6b;color:#c3d1f5}
+  .note b{color:var(--fg)}
+
+  /* ---------- checklist ---------- */
+  ul.checks{list-style:none;margin:0;padding:0}
+  ul.checks li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:13.5px;
+               color:var(--ft);border-bottom:1px solid var(--bd)}
+  ul.checks li:last-child{border-bottom:0}
+  ul.checks li i{width:18px;height:18px;flex:0 0 18px;border-radius:50%;border:1.5px solid var(--bd2);
+                 font-style:normal;font-size:10px;line-height:15px;text-align:center;margin-top:2px;
+                 transition:.15s}
+  ul.checks li.ok{color:var(--mu)}
+  ul.checks li.ok i{background:var(--mint);border-color:var(--mint);color:#06281b;font-weight:800}
+  ul.checks li b{font-weight:650}
+
+  /* ---------- calibration ---------- */
+  .refbar{margin-bottom:20px}
+  .bleed{width:100%}
+  #calStage{position:relative;min-height:240px;padding:34px 0 16px 46px;overflow:hidden}
+  #calGuide{position:absolute;left:46px;top:10px;bottom:10px;width:2px;
+            background:linear-gradient(180deg,transparent,var(--ac) 12%,var(--ac) 88%,transparent);
+            opacity:.6;pointer-events:none}
+  #calGuide::before{content:"";position:absolute;left:-4px;top:0;width:10px;height:2px;background:var(--ac)}
+  #calGuide::after{content:"";position:absolute;left:-4px;bottom:0;width:10px;height:2px;background:var(--ac)}
+  #calShape{position:relative;background:linear-gradient(145deg,#fdfdff,#e4e8f0);border-radius:6px;
+            box-shadow:0 0 0 1px #ffffff40,0 18px 44px #00000088}
+  #calShape.circ{border-radius:50%}
+  #calShape.line{background:none;box-shadow:none;height:0!important;border-top:3px solid #eef1f7}
+  #calShape.line::before,#calShape.line::after{content:"";position:absolute;top:-18px;width:3px;
+            height:36px;background:#eef1f7;border-radius:2px}
+  #calShape.line::before{left:0} #calShape.line::after{right:0}
+  #calGrip{position:absolute;top:50%;right:-17px;width:34px;height:72px;transform:translateY(-50%);
+           background:var(--ac);border-radius:9px;cursor:ew-resize;touch-action:none;
+           box-shadow:0 6px 20px #000a,0 0 0 4px #6d8fff2e;display:grid;place-items:center}
+  #calGrip:focus{outline:none;box-shadow:0 6px 20px #000a,0 0 0 6px #6d8fff55}
+  #calGrip::after{content:"⇤⇥";color:#08101f;font-size:13px;font-weight:800;letter-spacing:-2px}
+  .calbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .vbar{background:linear-gradient(145deg,#fdfdff,#e4e8f0);height:20px;border-radius:4px;
+        box-shadow:0 0 0 1px #ffffff30}
+  .vlab{font-size:12px;color:var(--ft);margin:6px 0 16px;font-variant-numeric:tabular-nums}
+  .kv{display:flex;gap:28px;flex-wrap:wrap}
+  .kv>div{min-width:84px}
+  .kv .k{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
+  .kv .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;
+         font-family:var(--mono)}
+
+  /* ---------- measure (fullscreen canvas) ---------- */
+  #s-measure{position:fixed;inset:0;z-index:60;background:var(--bg);
+             touch-action:none;user-select:none;-webkit-user-select:none}
+  #stage{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #stage.grabbing{cursor:grabbing}
+  #mbar{position:absolute;inset:0 0 auto 0;height:62px;z-index:3;background:#0b0d12e6;
+        border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px;
+        padding:0 18px;backdrop-filter:blur(10px)}
+  #mbar .ttl{font-size:15px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+  #mbar .hint{font-size:12.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #mpanel{position:absolute;top:62px;right:0;bottom:0;width:300px;z-index:3;background:#0b0d12f2;
+          border-left:1px solid var(--bd);padding:20px 18px;overflow:auto;backdrop-filter:blur(10px);
+          display:flex;flex-direction:column;gap:16px}
+  .readout{display:flex;flex-direction:column;gap:2px}
+  .readout .lbl{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
+  .readout .num{font-size:34px;font-weight:750;letter-spacing:-1.6px;font-variant-numeric:tabular-nums;
+                line-height:1.05}
+  .readout .num small{font-size:14px;color:var(--ft);font-weight:600;letter-spacing:0;margin-left:3px}
+  .readout.mini .num{font-size:20px;letter-spacing:-.7px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+
+  /* ---------- grip ---------- */
+  .grips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .gripcard{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;
+            cursor:pointer;text-align:left;font:inherit;color:inherit;display:block;width:100%}
+  .gripcard:hover{border-color:var(--bd2);background:var(--s1)}
+  .gripcard.on{border-color:var(--ac);background:var(--acd)}
+  .gripcard svg{width:100%;height:auto;display:block;background:#0b0d12;border-radius:9px;
+                margin-bottom:12px;border:1px solid var(--bd)}
+  .gripcard .gn{font-size:16px;font-weight:720;letter-spacing:-.3px}
+  .gripcard.on .gn{color:var(--ac2)}
+  .gripcard .gd{font-size:12.5px;color:var(--ft);margin-top:5px;line-height:1.55}
+
+  /* ---------- result / distribution ---------- */
+  .statrow{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-end}
+  .statrow .unit{font-size:17px;color:var(--ft);font-weight:600;letter-spacing:0}
+  .dist{position:relative;height:56px;margin:22px 0 4px}
+  .dist .track{position:absolute;left:0;right:0;top:26px;height:6px;border-radius:3px;
+               background:linear-gradient(90deg,#1e2433,#2f3950,#1e2433)}
+  .dist .tick{position:absolute;top:18px;width:2px;height:22px;background:var(--bd2);border-radius:1px}
+  .dist .tlab{position:absolute;top:44px;font-size:11px;color:var(--ft);transform:translateX(-50%);
+              white-space:nowrap}
+  .dist .you{position:absolute;top:10px;width:3px;height:38px;background:var(--mint);border-radius:2px;
+             box-shadow:0 0 14px #3ddc9799}
+  .dist .youlab{position:absolute;top:-8px;font-size:12px;font-weight:750;color:var(--mint);
+                transform:translateX(-50%);white-space:nowrap}
+
+  /* ---------- recommendation ---------- */
+  .rng{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px;margin-top:14px}
+  .rng>div{background:var(--s2);border-radius:var(--rs);padding:13px 15px}
+  .rng .k{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
+  .rng .v{font-size:19px;font-weight:720;font-variant-numeric:tabular-nums;margin-top:3px}
+  .rng .v small{font-size:12px;color:var(--ft);font-weight:600}
+  .mrow{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;
+        margin-bottom:8px;position:relative;overflow:hidden}
+  .mrow.top{border-color:#2c5f49}
+  .mrow .fill{position:absolute;inset:0 auto 0 0;background:#6d8fff12;pointer-events:none}
+  .mrow.top .fill{background:#3ddc9714}
+  .mrow>*{position:relative}
+  .mhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .mhead .bd{font-size:11.5px;color:var(--ft);font-weight:700;letter-spacing:.3px}
+  .mhead .nm{font-size:15.5px;font-weight:720;letter-spacing:-.3px}
+  .mhead .pc{margin-left:auto;font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;
+             color:var(--ac2);font-family:var(--mono)}
+  .mrow.top .mhead .pc{color:var(--mint)}
+  .mspec{font-size:12.5px;color:var(--mu);margin-top:5px;font-variant-numeric:tabular-nums}
+  .mwhy{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-size:11.5px;padding:3px 9px;border-radius:99px;background:var(--s3);color:var(--ft);
+        font-weight:600}
+  .chip.ok{background:#12352a;color:#6fe0ac}
+  .chip.bad{background:#352a11;color:var(--amber)}
+  .empty{border:1px dashed var(--bd2);border-radius:var(--r);padding:34px;text-align:center;color:var(--ft)}
+
+  /* ---------- overlays ---------- */
+  .banner{position:fixed;inset:0 0 auto 0;z-index:200;background:var(--amber);color:#241a05;
+          padding:11px 18px;font-size:13.5px;font-weight:650;display:flex;gap:12px;align-items:center}
+  .banner[hidden]{display:none!important}
+  .banner button{background:#241a05;border-color:#241a05;color:var(--amber);padding:6px 12px;font-size:12.5px}
+  #help{position:fixed;inset:0;z-index:120;background:#05070ceb;display:grid;place-items:center;
+        padding:24px;backdrop-filter:blur(4px)}
+  #help[hidden]{display:none!important}
+  .helpbox{background:var(--s1);border:1px solid var(--bd);border-radius:18px;max-width:860px;
+           width:100%;max-height:88vh;overflow:auto;padding:28px}
+  .hgrid{display:grid;grid-template-columns:230px 1fr;gap:28px;align-items:start}
+  @media(max-width:720px){.hgrid{grid-template-columns:1fr}}
+  .fig{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px;text-align:center}
+  .fig svg{width:100%;height:auto;display:block}
+  .fig figcaption{font-size:11.5px;color:var(--ft);margin-top:8px}
+  ol.steps{margin:0;padding-left:20px;color:var(--mu)}
+  ol.steps li{margin-bottom:10px}
+  ul.tight{margin:0;padding-left:19px;color:var(--mu)}
+  ul.tight li{margin-bottom:7px}
+  input[type=number]{font:inherit;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
+                     color:var(--fg);padding:10px 13px;width:118px;font-variant-numeric:tabular-nums}
+  input[type=number]:focus{outline:none;border-color:var(--ac)}
+  label{font-size:13.5px;color:var(--mu)}
+  #diag{font-size:13.5px;margin-top:12px}
+  #diag.ok{color:var(--mint)} #diag.warn{color:var(--amber)} #diag.bad{color:var(--rose)}
+  #langBtn{position:fixed;top:14px;right:18px;z-index:80;font-family:var(--mono);font-size:12px;
+           letter-spacing:.4px;padding:6px 12px}
+  pre.json{background:var(--bg);border:1px solid var(--bd);border-radius:9px;padding:13px;
+           font:12px/1.55 var(--mono);overflow:auto;color:var(--mu);margin:0}
+</style>
+</head>
+<body>
+
+<button id="langBtn" class="btn-sm">EN</button>
+
+<div id="zoomWarn" class="banner" hidden>
+  <span id="zoomMsg"></span><span class="spacer"></span>
+  <button id="zoomRecal" data-i18n="warn.recal"></button>
+  <button id="zoomIgnore" data-i18n="warn.ignore"></button>
+</div>
+
+<nav id="stepper" hidden><div class="in">
+  <div class="stp" data-st="0"><i>1</i><span data-i18n="nav.prep"></span></div><em></em>
+  <div class="stp" data-st="1"><i>2</i><span data-i18n="nav.cal"></span></div><em></em>
+  <div class="stp" data-st="2"><i>3</i><span data-i18n="nav.measure"></span></div><em></em>
+  <div class="stp" data-st="3"><i>4</i><span data-i18n="nav.grip"></span></div><em></em>
+  <div class="stp" data-st="4"><i>5</i><span data-i18n="nav.rec"></span></div>
+</div></nav>
+
+<!-- ============== 0. INTRO ============== -->
+<section id="s-intro" class="screen"><div class="page">
+  <h1 data-i18n-html="intro.h1"></h1>
+  <p class="lead" data-i18n-html="intro.lead"></p>
+
+  <p id="smallWarn" class="note warn" hidden></p>
+
+  <div class="row">
+    <button class="btn-pri btn-lg" id="goCal" data-i18n="intro.start"></button>
+    <button class="btn-lg" id="goSaved" hidden></button>
+  </div>
+  <p style="margin-top:14px">
+    <button class="btn-ghost btn-sm" id="goManual" data-i18n="intro.manual"></button>
+  </p>
+
+  <div class="hr"></div>
+
+  <h3 data-i18n="intro.needTitle"></h3>
+  <p style="margin-bottom:22px" data-i18n-html="intro.needBody"></p>
+
+  <h3 data-i18n="intro.howTitle"></h3>
+  <ul class="checks" style="margin-bottom:8px">
+    <li><i>1</i><div data-i18n-html="intro.how1"></div></li>
+    <li><i>2</i><div data-i18n-html="intro.how2"></div></li>
+    <li><i>3</i><div data-i18n-html="intro.how3"></div></li>
+  </ul>
+
+  <details class="disc">
+    <summary data-i18n="intro.beforeSummary"></summary>
+    <div class="body">
+      <ul class="tight">
+        <li data-i18n-html="intro.before1"></li>
+        <li data-i18n-html="intro.before2"></li>
+        <li data-i18n-html="intro.before3"></li>
+        <li data-i18n-html="intro.before4"></li>
+      </ul>
+    </div>
+  </details>
+</div></section>
+
+<!-- ============== 0b. MANUAL ENTRY ============== -->
+<section id="s-manual" class="screen" hidden><div class="page">
+  <h1 data-i18n="manual.h1"></h1>
+  <p class="lead" data-i18n="manual.lead"></p>
+  <div class="panel">
+    <div class="row" style="gap:22px">
+      <label><span data-i18n="manual.len"></span>
+        <input type="number" id="mnLen" min="120" max="250" step="0.5" placeholder="191"> mm</label>
+      <label><span data-i18n="manual.wid"></span>
+        <input type="number" id="mnWid" min="55" max="130" step="0.5" placeholder="88"> mm</label>
+    </div>
+    <p class="sub" style="margin:14px 0 0" data-i18n="manual.note"></p>
+    <p id="mnErr" class="note warn" hidden></p>
+  </div>
+  <div class="nav">
+    <button class="btn-ghost" id="mnBack" data-i18n="manual.back"></button>
+    <div class="spacer"></div>
+    <button class="btn-pri btn-lg" id="mnGo" data-i18n="manual.go"></button>
+  </div>
+</div></section>
+
+<!-- ============== 1. CALIBRATION ============== -->
+<section id="s-cal" class="screen" hidden><div class="page">
+  <h1 data-i18n="cal.h1"></h1>
+  <p class="lead" data-i18n-html="cal.lead"></p>
+
+  <div class="refbar">
+    <div class="seg" id="refGrid"></div>
+    <p class="sub" id="refHint" style="margin:12px 0 0"></p>
+  </div>
+  <div class="note info" style="margin:0 0 4px" data-i18n-html="cal.alignNote"></div>
+</div>
+
+<div class="bleed">
+  <div id="calStage"><div id="calGuide"></div><div id="calShape"><div id="calGrip" tabindex="0"></div></div></div>
+</div>
+
+<div class="page">
+  <div class="row" id="customRow" hidden style="margin-bottom:16px">
+    <label><span data-i18n="cal.customLabel"></span>
+      <input type="number" id="customMm" value="100" min="10" max="400" step="0.5"> mm</label>
+    <span class="sub" data-i18n="cal.customNote"></span>
+  </div>
+
+  <div class="calbar">
+    <span class="sub" data-i18n-html="cal.fineHint"></span>
+  </div>
+
+  <p id="maxHint" class="note warn" hidden></p>
+  <p id="ppiWarn" class="note warn" hidden></p>
+
+  <details class="disc" id="verifyDisc">
+    <summary data-i18n="cal.verifySummary"></summary>
+    <div class="body">
+      <p data-i18n-html="cal.verifyBody"></p>
+      <div class="vbar" id="v100"></div><div class="vlab" data-i18n="cal.v100"></div>
+      <div class="vbar" id="v50"></div><div class="vlab" data-i18n="cal.v50"></div>
+      <div class="vbar" id="v856"></div>
+      <div class="vlab" style="margin-bottom:0" data-i18n="cal.vcard"></div>
+    </div>
+  </details>
+
+  <details class="disc">
+    <summary data-i18n="cal.techSummary"></summary>
+    <div class="body">
+      <div class="kv">
+        <div><div class="k" data-i18n="cal.kPx"></div><div class="v" id="mPx">-</div></div>
+        <div><div class="k" data-i18n="cal.kPpm"></div><div class="v" id="mPpm">-</div></div>
+        <div><div class="k" data-i18n="cal.kPpi"></div><div class="v" id="mPpi">-</div></div>
+        <div><div class="k" data-i18n="cal.kDpr"></div><div class="v" id="mDpr">-</div></div>
+      </div>
+      <p style="margin:14px 0 0" data-i18n-html="cal.techNote"></p>
+    </div>
+  </details>
+
+  <div class="nav">
+    <button class="btn-ghost" id="calBack" data-i18n="cal.back"></button>
+    <div class="spacer"></div>
+    <button class="btn-pri btn-lg" id="calNext" data-i18n="cal.next"></button>
+  </div>
+</div></section>
+
+<!-- ============== 2. MEASURE (fullscreen canvas) ============== -->
+<section id="s-measure" class="screen" hidden>
+  <svg id="stage"></svg>
+  <div id="mbar">
+    <div class="ttl" data-i18n="measure.title"></div>
+    <div class="hint" data-i18n="measure.hint"></div>
+    <div class="spacer"></div>
+    <div class="seg" style="flex-wrap:nowrap">
+      <button id="sideL" data-i18n="measure.left"></button>
+      <button id="sideR" data-i18n="measure.right"></button>
+    </div>
+    <div class="seg" style="flex-wrap:nowrap">
+      <button id="orDiag">45°</button><button id="orUp">90°</button>
+      <button id="orAuto" data-i18n="measure.auto"></button>
+    </div>
+    <button class="btn-sm" id="mFull" data-i18n="measure.full"></button>
+  </div>
+
+  <div id="mpanel">
+    <div class="readout">
+      <div class="lbl" data-i18n="measure.lenLbl"></div>
+      <div class="num" id="lvLen">–</div>
+    </div>
+    <div class="readout mini">
+      <div class="lbl" data-i18n="measure.widLbl"></div>
+      <div class="num" id="lvWid">–</div>
+    </div>
+    <div class="readout mini" style="opacity:.6">
+      <div class="lbl" data-i18n="measure.palmLbl"></div>
+      <div class="num" id="lvPalm">–</div>
+    </div>
+
+    <ul class="checks" id="mChecks">
+      <li data-c="wrist"><i>✓</i><div><span class="dot" style="background:#6d8fff"></span><span data-i18n-html="measure.chk1"></span></div></li>
+      <li data-c="tip"><i>✓</i><div><span class="dot" style="background:#3ddc97"></span><span data-i18n-html="measure.chk2"></span></div></li>
+      <li data-c="width"><i>✓</i><div><span class="dot" style="background:#ffc24b"></span><span data-i18n-html="measure.chk3"></span></div></li>
+    </ul>
+
+    <div class="row" style="gap:7px">
+      <button class="btn-sm" id="mHelp" data-i18n="measure.help"></button>
+      <button class="btn-sm btn-ghost" id="mDetail"></button>
+      <button class="btn-sm btn-ghost" id="mReset" data-i18n="measure.reset"></button>
+    </div>
+
+    <div id="fitWarn" class="note warn" hidden style="font-size:12.5px;padding:11px 13px;margin:0"></div>
+
+    <div class="spacer"></div>
+    <button class="btn-pri" id="mDone" style="width:100%" data-i18n="measure.done"></button>
+    <button class="btn-ghost btn-sm" id="mExit" style="width:100%" data-i18n="measure.exit"></button>
+  </div>
+</section>
+
+<!-- ============== 3. RESULT ============== -->
+<section id="s-result" class="screen" hidden><div class="page">
+  <h1 data-i18n="result.h1"></h1>
+
+  <div class="panel">
+    <div class="statrow">
+      <div>
+        <h3 style="margin-bottom:6px" data-i18n="result.len"></h3>
+        <div class="display" id="rLen">–</div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:6px" data-i18n="result.wid"></h3>
+        <div class="display" id="rWid" style="font-size:clamp(28px,4vw,38px)">–</div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:6px" data-i18n="result.palm"></h3>
+        <div class="display" id="rPalm" style="font-size:clamp(28px,4vw,38px);opacity:.62">–</div>
+      </div>
+    </div>
+
+    <div class="dist" id="dist"></div>
+    <p class="sub" id="distNote" style="margin:12px 0 0"></p>
+  </div>
+
+  <div class="row" style="margin-top:18px">
+    <button class="btn-pri btn-lg" id="goGrip" data-i18n="result.goGrip"></button>
+    <button id="rAgain" data-i18n="result.again"></button>
+    <button class="btn-ghost" id="shareBtn" data-i18n="result.share"></button>
+  </div>
+  <p class="sub" id="palmEst" style="margin:10px 0 0" hidden></p>
+
+  <details class="disc">
+    <summary data-i18n="result.rulerSummary"></summary>
+    <div class="body">
+      <p data-i18n="result.rulerBody"></p>
+      <div class="row">
+        <label><span data-i18n="result.truthLabel"></span>
+          <input type="number" id="truth" step="0.5" min="100" max="260" placeholder="191"> mm</label>
+        <button class="btn-sm" id="diagBtn" data-i18n="result.compare"></button>
+      </div>
+      <div id="diag"></div>
+      <div id="fixWrap" class="row" style="margin-top:14px" hidden>
+        <button class="btn-sm" id="fixCal" data-i18n="result.fixBtn"></button>
+        <span class="sub" data-i18n="result.fixNote"></span>
+      </div>
+    </div>
+  </details>
+
+  <details class="disc">
+    <summary data-i18n="result.dataSummary"></summary>
+    <div class="body">
+      <pre class="json" id="rJson"></pre>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-sm" id="copyJson" data-i18n="result.copy"></button>
+        <button class="btn-sm btn-ghost" id="rRecal" data-i18n="result.recal"></button>
+      </div>
+    </div>
+  </details>
+</div></section>
+
+<!-- ============== 4. GRIP ============== -->
+<section id="s-grip" class="screen" hidden><div class="page">
+  <h1 data-i18n="grip.h1"></h1>
+  <p class="lead" data-i18n-html="grip.lead"></p>
+
+  <div class="grips" id="gripGrid"></div>
+
+  <details class="disc" style="margin-top:18px">
+    <summary data-i18n="grip.filterSummary"></summary>
+    <div class="body" id="filters"></div>
+  </details>
+
+  <div class="nav">
+    <button class="btn-ghost" id="gBack" data-i18n="grip.back"></button>
+    <div class="spacer"></div>
+    <button class="btn-pri btn-lg" id="gNext" data-i18n="grip.next"></button>
+  </div>
+</div></section>
+
+<!-- ============== 5. RECOMMENDATION ============== -->
+<section id="s-rec" class="screen" hidden><div class="page">
+  <h1 data-i18n="rec.h1"></h1>
+  <div class="panel" id="recRange"></div>
+  <h3 style="margin:28px 0 12px" data-i18n="rec.listTitle"></h3>
+  <div id="recList"></div>
+
+  <details class="disc">
+    <summary data-i18n="rec.trustSummary"></summary>
+    <div class="body">
+      <p data-i18n-html="rec.trust1"></p>
+      <p style="margin-bottom:0" data-i18n-html="rec.trust2"></p>
+    </div>
+  </details>
+
+  <div class="nav">
+    <button class="btn-ghost" id="recBack" data-i18n="rec.back"></button>
+    <div class="spacer"></div>
+    <button id="recRemeasure" data-i18n="rec.remeasure"></button>
+  </div>
+</div></section>
+
+<!-- ============== HELP OVERLAY ============== -->
+<div id="help" hidden><div class="helpbox">
+  <h2 data-i18n="help.h1"></h2>
+  <p style="margin-bottom:20px" data-i18n-html="help.lead"></p>
+
+  <div class="hgrid">
+    <figure class="fig" style="margin:0">
+      <svg id="helpFig" aria-label="hand landmarks"></svg>
+      <figcaption data-i18n="help.caption"></figcaption>
+    </figure>
+    <div>
+      <h3 data-i18n="help.findTitle"></h3>
+      <ol class="steps">
+        <li data-i18n-html="help.find1"></li>
+        <li data-i18n-html="help.find2"></li>
+        <li data-i18n-html="help.find3"></li>
+      </ol>
+      <div class="note info" data-i18n-html="help.why"></div>
+      <h3 style="margin-top:22px" data-i18n="help.restTitle"></h3>
+      <ul class="tight">
+        <li data-i18n-html="help.rest1"></li>
+        <li data-i18n-html="help.rest2"></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row end" style="margin-top:24px">
+    <button class="btn-pri" id="helpClose" data-i18n="help.close"></button>
+  </div>
+</div></div>
+
+<script src="i18n.js"></script>
+<script src="mice.js"></script>
+<script>
+"use strict";
+/* =====================================================================
+   손 크기 측정 프로토타입
+   - 핵심: pxPerMm 하나가 패널 DPI / OS 배율 / 레티나 / 브라우저 줌을 전부 흡수한다.
+   - 측정: 파라메트릭 손 윤곽선을 실제 손에 맞춰 드래그. 손잡이 4개.
+   ===================================================================== */
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const CAL_KEY = "hm.cal.v1";
+const LANG_KEY = "hm.lang.v1";
+
+/* ---------- i18n ---------- */
+let LANG = (function(){
+  try{ const v = localStorage.getItem(LANG_KEY); if(v === "ko" || v === "en") return v; }catch(e){}
+  return (navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
+})();
+const DICT = () => (window.I18N && window.I18N[LANG]) || {};
+function t(key, vars){
+  let v = DICT()[key];
+  if(v == null) v = (window.I18N && window.I18N.ko && window.I18N.ko[key]) || key;
+  if(vars) for(const k in vars) v = v.split("{" + k + "}").join(vars[k]);
+  return v;
+}
+/** 정적 마크업의 data-i18n / data-i18n-html 를 채운다. */
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  $$("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  $$("[data-i18n-html]").forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
+  $("#langBtn").textContent = t("lang.other");
+  document.title = t("doc.title");
+}
+function setLang(l){
+  LANG = l;
+  try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
+  applyI18n();
+  // 현재 보이는 화면을 다시 그린다 (동적 문자열 반영)
+  if(!$("#s-cal").hidden){ renderRefGrid(); renderCal(); }
+  if(!$("#s-measure").hidden) renderMeasureUI();
+  if(!$("#s-result").hidden) renderResult();
+  if(!$("#s-grip").hidden) renderGripScreen();
+  if(!$("#s-rec").hidden) renderRec();
+  if(!$("#help").hidden) buildHelpFigure();
+  if(!$("#zoomWarn").hidden) checkDrift();
+  refreshSaved();
+}
+
+/* ---------- 기준물 정의 (w = 맞출 가로 폭, mm) ---------- */
+const REFS = {
+  ruler: { w:150,  h:null,   shape:"line" },
+  a4:    { w:210,  h:297,    shape:"rect" },
+  cd:    { w:120,  h:120,    shape:"circle" },
+  bill:  { w:148,  h:68,     shape:"rect" },
+  card:  { w:85.6, h:53.98,  shape:"rect" },
+  custom:{ w:100,  h:null,   shape:"line", custom:true },
+};
+const refName = k => t("ref." + k);
+const refHint = k => t("ref." + k + ".hint");
+
+/* ---------- 상태 ---------- */
+const st = { ref:"card", widthPx:0, pxPerMm:0, calDrag:null };
+
+/* 파라메트릭 손 모델.
+   로컬 좌표 (u, v): v = 손목 기준선 중점에서 중지 끝 방향, u = 그에 수직.
+   u < 0 이 엄지 쪽. side = -1 이면 좌우 반전(오른손). */
+const HAND = {
+  x:0, y:0,          // 손목 기준선 중점 (stage px)
+  L:0,               // 손 길이 (px)
+  W:0,               // 손 너비 = 너클선 폭 (px)
+  pr:0.50,           // 손바닥 비율: 손목 -> 너클선 거리 / L
+  ang:-Math.PI/2,    // 손목 -> 중지 방향
+  side:1,            // 1 = 왼손, -1 = 오른손
+  orient:"diag",     // "diag" = 대각선 45도, "up" = 수직 90도, "auto" = 들어가는 각도 자동
+  // 손가락별 세부 조정. 중지(1)는 손 길이 기준축이라 항상 1.0 / 오프셋 0 으로 고정된다.
+  fr:[0.862, 1.000, 0.937, 0.690],   // 검지/중지/약지/소지 끝 (중지 길이 대비)
+  fo:[0, 0, 0, 0],                   // 손가락 끝 좌우 오프셋 (px) — 벌어진 손가락 대응
+  thumb:{ tu:-0.84, tv:0.20, w:1 },  // 엄지 끝 (tu × 손너비, tv × 너클선 높이) + w = 굵기 배율
+};
+const FR0 = [0.862, 1.000, 0.937, 0.690];
+let fitsArea = true;
+const DEF = { L:185, W:84, pr:0.50 };   // mm 기준 기본값
+const OFF = 22;                          // 손잡이를 윤곽선 바깥으로 밀어내는 거리 (px)
+
+let drag = null, sel = null, handles = [];
+let showDetail = false;          // 손가락·엄지 미세조정 표시 여부
+const touched = new Set();       // 사용자가 움직인 손잡이 (체크리스트용)
+
+/* ---------- 유틸 ---------- */
+const f1 = n => (n == null || !isFinite(n) ? "-" : n.toFixed(1));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const screenSig = () => screen.width + "x" + screen.height;
+
+function guessPxPerMm(){
+  const d = document.createElement("div");
+  d.style.cssText = "position:absolute;visibility:hidden;width:100mm;height:0";
+  document.body.appendChild(d);
+  const px = d.getBoundingClientRect().width;
+  d.remove();
+  return px / 100 || 3.7795;
+}
+
+/* ============ 캘리브레이션 저장 / 복원 ============ */
+function saveCal(){
+  try{
+    localStorage.setItem(CAL_KEY, JSON.stringify({
+      pxPerMm:st.pxPerMm, dpr:devicePixelRatio, sig:screenSig(),
+      ref:st.ref, at:new Date().toISOString()
+    }));
+  }catch(e){ /* 시크릿 모드 등 — 무시 */ }
+}
+function loadCal(){
+  try{ return JSON.parse(localStorage.getItem(CAL_KEY) || "null"); }
+  catch(e){ return null; }
+}
+
+/** pxPerMm 는 브라우저 줌 / 다른 모니터, 이 두 경우에만 깨진다. */
+function checkDrift(){
+  const c = loadCal();
+  if(!c || !st.pxPerMm) return;
+  const dprChanged = Math.abs(c.dpr - devicePixelRatio) > 0.005;
+  const sigChanged = c.sig !== screenSig();
+  if(dprChanged || sigChanged){
+    $("#zoomMsg").innerHTML = sigChanged ? t("warn.monitor")
+      : t("warn.zoom", { a:c.dpr, b:devicePixelRatio });
+    $("#zoomWarn").hidden = false;
+  }else{
+    $("#zoomWarn").hidden = true;
+  }
+}
+$("#zoomIgnore").onclick = () => { $("#zoomWarn").hidden = true; };
+$("#zoomRecal").onclick  = () => { $("#zoomWarn").hidden = true; show("#s-cal"); renderRefGrid(); renderCal(); };
+
+/* ============ 1. 캘리브레이션 ============ */
+function renderRefGrid(){
+  $("#refGrid").innerHTML = Object.keys(REFS).map(k =>
+    '<button data-ref="' + k + '"' + (k === st.ref ? ' class="on"' : '') + '>' +
+    refName(k) + '</button>').join("");
+  $$("#refGrid button").forEach(b => b.onclick = () => {
+    st.ref = b.dataset.ref;
+    st.widthPx = REFS[st.ref].w * st.pxPerMm;   // 물리 크기 유지한 채 기준물만 교체
+    renderRefGrid();
+    renderCal();
+  });
+}
+
+function renderCal(){
+  const r = REFS[st.ref];
+  const stage = $("#calStage"), shape = $("#calShape");
+
+  // 화면 전체 폭까지 늘릴 수 있어야 한다 (칼럼 폭에 묶으면 큰 기준물을 못 맞춤)
+  const maxW = Math.max(60, Math.min(stage.clientWidth, innerWidth - 24) - 46);
+  const atMax = st.widthPx >= maxW - 1;
+  st.widthPx = clamp(st.widthPx, 40, maxW);
+  st.pxPerMm = st.widthPx / r.w;
+
+  // 최대 폭에 닿았는데 실물이 아직 더 크다면 캘리브레이션이 틀어진다 -> 알려준다
+  const mh = $("#maxHint");
+  mh.hidden = !atMax;
+  if(atMax){
+    mh.innerHTML = t("cal.maxHint", { n:Math.floor(maxW / st.pxPerMm) });
+  }
+
+  $("#customRow").hidden = !r.custom;
+
+  shape.className = r.shape === "circle" ? "circ" : r.shape === "line" ? "line" : "";
+  shape.style.width  = st.widthPx + "px";
+  shape.style.height = r.h ? Math.min(r.h * st.pxPerMm, 520) + "px" : "0px";
+
+  const ppi = st.pxPerMm * devicePixelRatio * 25.4;
+  $("#mPx").textContent  = Math.round(st.widthPx) + " px";
+  $("#mPpm").textContent = st.pxPerMm.toFixed(3);
+  $("#mPpi").textContent = Math.round(ppi) + " ppi";
+  $("#mDpr").textContent = devicePixelRatio.toFixed(2);
+  renderVerify();                       // 검증 바는 접혀 있어도 항상 최신값 유지
+
+  // 자동 sanity check — 일반 디스플레이는 대략 90~250ppi
+  const w = $("#ppiWarn");
+  if(ppi < 70 || ppi > 350){
+    w.innerHTML = t("cal.ppiWarn", { n:Math.round(ppi) });
+    w.hidden = false;
+  }else{
+    w.hidden = true;
+  }
+
+  $("#refHint").innerHTML = refHint(st.ref) + (r.h && r.h * st.pxPerMm > 520
+    ? "<br><span style='color:var(--amber)'>" + t("cal.tallNote") + "</span>" : "");
+}
+
+const grip = $("#calGrip");
+grip.tabIndex = 0;
+grip.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  grip.setPointerCapture(e.pointerId);
+  grip.focus();
+  st.calDrag = { x0:e.clientX, w0:st.widthPx };
+});
+grip.addEventListener("pointermove", e => {
+  if(!st.calDrag) return;
+  st.widthPx = st.calDrag.w0 + (e.clientX - st.calDrag.x0);
+  renderCal();
+});
+grip.addEventListener("pointerup",     () => { st.calDrag = null; });
+grip.addEventListener("pointercancel", () => { st.calDrag = null; });
+$("#customMm").addEventListener("input", () => {
+  const v = parseFloat($("#customMm").value);
+  if(!v || v < 10 || v > 400) return;
+  REFS.custom.w = v;      // 그려진 길이는 그대로 두고 "실제 길이"만 바꾼다 -> ppm 재계산
+  renderCal();
+});
+grip.addEventListener("keydown", e => {
+  const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+  if(!d) return;
+  e.preventDefault();
+  st.widthPx += d * (e.shiftKey ? 10 : 1);
+  renderCal();
+});
+
+/* ============ 2. 검증 ============ */
+function renderVerify(){
+  $("#v100").style.width  = 100 * st.pxPerMm + "px";
+  $("#v50").style.width   = 50  * st.pxPerMm + "px";
+  $("#v856").style.width  = 85.6  * st.pxPerMm + "px";
+  $("#v856").style.height = 53.98 * st.pxPerMm + "px";
+}
+
+/* ============ 3. 측정 — 파라메트릭 손 윤곽선 ============ */
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, text){
+  const n = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) n.setAttribute(k, attrs[k]);
+  if(text != null) n.textContent = text;
+  return n;
+}
+
+/* 손바닥을 화면에 붙이면 우리는 "손등"을 본다.
+   손가락이 위를 향할 때 왼손 엄지는 화면 오른쪽에 온다
+   (왼손: 엄지 = 손가락방향 × 손바닥법선 = (0,1,0)×(0,0,1) = (1,0,0) = 오른쪽).
+   템플릿은 엄지를 -u 에 그리므로, 왼손(side=1)일 때 좌우를 반전시킨다. */
+const mirror = () => -HAND.side;
+
+/** 로컬 (u,v) -> stage 좌표 */
+function toStage(u, v){
+  const ca = Math.cos(HAND.ang), sa = Math.sin(HAND.ang);
+  const uu = u * mirror();
+  return { x:HAND.x + uu * (-sa) + v * ca,
+           y:HAND.y + uu * ( ca) + v * sa };
+}
+/** stage 좌표 -> 로컬 (u,v) */
+function toLocal(x, y){
+  const ca = Math.cos(HAND.ang), sa = Math.sin(HAND.ang);
+  const dx = x - HAND.x, dy = y - HAND.y;
+  return { u:(dx * (-sa) + dy * ca) / mirror(), v:dx * ca + dy * sa };
+}
+
+/* ---- 손가락 기하. 윤곽선 그리기와 손잡이 배치가 반드시 같은 값을 쓰도록 함수로 뺀다. ---- */
+const FWR  = [1.06, 1.05, 1.00, 0.86];   // 검지/중지/약지/소지 상대 폭
+const WEBR = [0.21, 0.22, 0.18];         // 손가락 사이 물갈퀴 (너클선 위로, 중지 길이 대비)
+const FSUM = FWR.reduce((a, b) => a + b, 0);
+const fUnit = () => HAND.W / FSUM;
+function fEdge(i){                       // i번째 손가락 칸의 엄지쪽 경계
+  let acc = -HAND.W / 2;
+  for(let k = 0; k < i; k++) acc += FWR[k] * fUnit();
+  return acc;
+}
+const fLo   = i => (i === 0 ?  -HAND.W / 2 : fEdge(i)     + fUnit() * 0.06);
+const fHi   = i => (i === 3 ?   HAND.W / 2 : fEdge(i + 1) - fUnit() * 0.06);
+const fHalf = i => (fHi(i) - fLo(i)) / 2;
+const fTip  = i => (fLo(i) + fHi(i)) / 2 + HAND.fo[i];   // 손끝 중심 (좌우 오프셋 반영)
+const fKy   = () => HAND.pr * HAND.L;                    // 너클선 높이
+const fFl   = () => HAND.L - fKy();                      // 중지 길이
+const fTv   = i => fKy() + fFl() * HAND.fr[i];           // i번째 손끝 높이
+const fWeb  = k => fKy() + fFl() * WEBR[k];
+/** 엄지 기하.
+    핵심: 엄지 뿌리를 "손바닥 엄지쪽 가장자리 곡선 위의 두 점(A,B)"으로 잡는다.
+    고정 좌표에 붙이면 엄지를 움직일 때 손바닥 윤곽선을 뚫고 교차한다. */
+function thumbGeom(){
+  const W = HAND.W, ky = fKy(), ww = W * 0.64;
+  // 손바닥 엄지쪽 가장자리 = 2차 베지에 (너클 모서리 P0 -> 손목 P2)
+  const P0 = { u:-W / 2, v:ky }, P1 = { u:-W * 0.53, v:ky * 0.45 }, P2 = { u:-ww / 2, v:0 };
+  const lerp = (a, b, t) => ({ u:a.u + (b.u - a.u) * t, v:a.v + (b.v - a.v) * t });
+  const at = t => lerp(lerp(P0, P1, t), lerp(P1, P2, t), t);
+  const TC = 0.43;
+  const M  = at(TC);          // 엄지 뿌리 중심 — 굵기와 무관하게 가장자리 위에 고정
+
+  // 엄지 끝 위치. 손바닥 안으로 말려들어가지 못하게 최소 길이를 준다.
+  let T = { u:W * HAND.thumb.tu, v:ky * HAND.thumb.tv };
+  let du = T.u - M.u, dv = T.v - M.v, dl = Math.hypot(du, dv);
+  if(dl < 1){ du = -1; dv = -1; dl = Math.SQRT2; }          // 퇴화 방지
+  const minL = W * 0.38;
+  if(dl < minL){ T = { u:M.u + du / dl * minL, v:M.v + dv / dl * minL };
+                 du = T.u - M.u; dv = T.v - M.v; dl = minL; }
+  let d = { u:du / dl, v:dv / dl };
+
+  // 엄지는 손바닥 "바깥"을 향해야 한다. 안쪽으로 끌면 캡슐이 손바닥을 관통하므로
+  // 가장자리 바깥 법선 기준 ±78도 안으로 방향을 제한한다.
+  const tg = { u:1.14 * (P1.u - P0.u) + 0.86 * (P2.u - P1.u),
+               v:1.14 * (P1.v - P0.v) + 0.86 * (P2.v - P1.v) };   // 가장자리 접선 @TC
+  let out = { u:tg.v, v:-tg.u };
+  const ol = Math.hypot(out.u, out.v) || 1; out.u /= ol; out.v /= ol;
+  if(out.u > 0){ out.u = -out.u; out.v = -out.v; }                // -u 쪽(손 바깥)
+  const MAXA = 78 * Math.PI / 180;
+  const ang = Math.atan2(d.u * (-out.v) + d.v * out.u, d.u * out.u + d.v * out.v);
+  if(Math.abs(ang) > MAXA){
+    const a = (ang > 0 ? 1 : -1) * MAXA, ca = Math.cos(a), sa = Math.sin(a);
+    d = { u:out.u * ca - out.v * sa, v:out.v * ca + out.u * sa };
+    T = { u:M.u + d.u * dl, v:M.v + d.v * dl };
+  }
+
+  // 뿌리 폭 = 사용자 배율(thumb.w). 단, 뿌리가 길이보다 넓어지면 측면이 접혀
+  // 자기교차가 생기므로 "끝이 뿌리 현에서 충분히 떨어져 있을 것"을 만족할 때까지 좁힌다.
+  let k = clamp(HAND.thumb.w || 1, 0.55, 1.8);
+  let tA, tB, A, B, abLen;
+  for(let it = 0; it < 4; it++){
+    tA = clamp(TC - 0.17 * k, 0.04, 0.40);
+    tB = clamp(TC + 0.17 * k, 0.46, 0.94);
+    A = at(tA); B = at(tB);
+    abLen = Math.hypot(A.u - B.u, A.v - B.v) || 1;
+    const ax = (B.u - A.u) / abLen, ay = (B.v - A.v) / abLen;
+    const perp = Math.abs((T.u - A.u) * ay - (T.v - A.v) * ax);   // 끝 ~ 뿌리 현 수직거리
+    if(perp >= abLen * 0.60) break;
+    k = clamp(k * Math.max(0.4, perp / (abLen * 0.60)), 0.30, 1.8);
+  }
+  const cA = lerp(P0, P1, tA);        // 분할된 가장자리 제어점 (de Casteljau)
+  const cB = lerp(P1, P2, tB);
+
+  let n = { u:-d.v, v:d.u };
+  if(n.u * (A.u - M.u) + n.v * (A.v - M.v) < 0) n = { u:-n.u, v:-n.v };   // A(손가락) 쪽
+  const tw  = Math.min(abLen / 2 * 0.58, dl * 0.42);   // 끝은 뿌리보다 가늘다
+  const mid = { u:M.u + d.u * dl * 0.5, v:M.v + d.v * dl * 0.5 };
+  return { A:A, B:B, M:M, cA:cA, cB:cB, P2:P2, T:T, d:d, n:n, tw:tw, dl:dl, mid:mid };
+}
+
+/** 손 윤곽선 path. 새끼손가락 쪽 손목에서 시작해 반시계 방향으로 한 바퀴.
+    비율은 실제 손 기준: 손끝 위치는 손 길이 대비, 손가락 사이 갈라짐은
+    너클선보다 "위"에서 끝난다(실제 물갈퀴는 너클 관절보다 15~20mm 앞쪽). */
+function handPathD(){
+  const L = HAND.L, W = HAND.W;
+  const ky = HAND.pr * L;      // 너클선 높이 (손목 기준)
+  const fl = L - ky;           // 중지 길이 (너클선 -> 손끝)
+  const ww = W * 0.64;         // 손목 폭
+  const S  = (u, v) => { const p = toStage(u, v); return p.x.toFixed(1) + " " + p.y.toFixed(1); };
+
+  // 손목 새끼쪽 -> 손바닥 새끼쪽 모서리
+  let d = "M " + S(ww / 2, 0) + " Q " + S(W * 0.465, ky * 0.30) + " " + S(fHi(3), ky);
+
+  // 소지(3) -> 검지(0). 뿌리는 너클선 칸에 고정하고 끝만 움직이므로 손가락이 기울 수 있다.
+  for(let i = 3; i >= 0; i--){
+    const baseIn = (i > 0) ? fWeb(i - 1) : ky;   // 안쪽(엄지 방향) 뿌리
+    const c = fTip(i), h = fHalf(i), t = fTv(i);
+    d += " L " + S(c + h, t - h);
+    d += " Q " + S(c + h, t) + " " + S(c, t);                 // 손끝 둥글게
+    d += " Q " + S(c - h, t) + " " + S(c - h, t - h);
+    d += " L " + S(fLo(i), baseIn);
+    if(i > 0){                                                 // 물갈퀴 V
+      d += " Q " + S((fLo(i) + fHi(i - 1)) / 2, baseIn - fl * 0.025) + " " + S(fHi(i - 1), baseIn);
+    }
+  }
+
+  // 엄지. 뿌리(A,B)가 손바닥 가장자리 곡선 "위"에 있으므로 어디로 움직여도 교차하지 않는다.
+  const t = thumbGeom();
+  const up = { u:t.T.u + t.n.u * t.tw, v:t.T.v + t.n.v * t.tw };   // 손가락 쪽 측면
+  const dn = { u:t.T.u - t.n.u * t.tw, v:t.T.v - t.n.v * t.tw };   // 손목 쪽 측면
+
+  d += " Q " + S(t.cA.u, t.cA.v) + " " + S(t.A.u, t.A.v);          // 가장자리 -> 엄지 뿌리 A
+  d += " Q " + S((t.A.u + up.u) / 2 + t.n.u * t.tw * 0.4,
+                 (t.A.v + up.v) / 2 + t.n.v * t.tw * 0.4) + " " + S(up.u, up.v);
+  // 끝 둥글게 — 2분할 반원 근사 (단일 Q 로 하면 뾰족해진다)
+  d += " Q " + S(up.u + t.d.u * t.tw * 0.85, up.v + t.d.v * t.tw * 0.85) + " " +
+               S(t.T.u + t.d.u * t.tw * 1.05, t.T.v + t.d.v * t.tw * 1.05);
+  d += " Q " + S(dn.u + t.d.u * t.tw * 0.85, dn.v + t.d.v * t.tw * 0.85) + " " + S(dn.u, dn.v);
+  d += " Q " + S((dn.u + t.B.u) / 2 - t.n.u * t.tw * 0.25,
+                 (dn.v + t.B.v) / 2 - t.n.v * t.tw * 0.25) + " " + S(t.B.u, t.B.v);
+  d += " Q " + S(t.cB.u, t.cB.v) + " " + S(-ww / 2, 0);            // 엄지 뿌리 B -> 손목
+  return d + " Z";
+}
+
+let manual = null;   // 직접 입력 / 링크 복원 시 {lenMm, widthMm, palmMm, est:true}
+function measures(){
+  if(manual) return manual;
+  const ppm = st.pxPerMm;
+  return { lenMm:HAND.L / ppm, widthMm:HAND.W / ppm, palmMm:HAND.pr * HAND.L / ppm };
+}
+function setManual(len, wid){
+  manual = { lenMm:len, widthMm:wid, palmMm:len * DEF.pr, est:true };
+}
+
+/** 이 화면이 실제 크기 손을 담을 수 있는가. 폰은 원리적으로 불가능하다. */
+function screenTooSmall(){
+  const ppm = st.pxPerMm || guessPxPerMm();
+  const w = innerWidth / ppm, h = innerHeight / ppm;      // mm
+  return !((w >= 200 && h >= 120) || (w >= 120 && h >= 200));
+}
+
+/* ---- 결과를 URL 에 담아 공유/북마크 가능하게 ---- */
+function writeHash(){
+  const m = measures();
+  history.replaceState(null, "",
+    "#len=" + f1(m.lenMm) + "&wid=" + f1(m.widthMm) + "&grip=" + pick.grip);
+}
+function readHash(){
+  const h = location.hash.replace(/^#/, "");
+  if(!h) return false;
+  const q = {};
+  h.split("&").forEach(kv => { const i = kv.indexOf("="); if(i > 0) q[kv.slice(0, i)] = kv.slice(i + 1); });
+  const len = parseFloat(q.len), wid = parseFloat(q.wid);
+  if(!(len >= 120 && len <= 250 && wid >= 55 && wid <= 130)) return false;
+  setManual(len, wid);
+  if(GRIPS[q.grip]) pick.grip = q.grip;
+  return true;
+}
+
+function layoutStage(){
+  const svg = $("#stage");
+  svg.setAttribute("viewBox", "0 0 " + svg.clientWidth + " " + svg.clientHeight);
+  if(!HAND.L) resetHand();
+  drawStage();
+}
+
+function resetHand(){
+  const svg = $("#stage");
+  const W = svg.clientWidth || innerWidth, H = svg.clientHeight || innerHeight;
+  HAND.L  = DEF.L * st.pxPerMm;
+  HAND.W  = DEF.W * st.pxPerMm;
+  HAND.pr = DEF.pr;
+  HAND.fr = FR0.slice();
+  HAND.fo = [0, 0, 0, 0];
+  HAND.thumb = { tu:-0.84, tv:0.20, w:1 };
+
+  // 사이드패널(276) / 상단바(74) 를 피한 배치 영역
+  const pad = 18 + OFF;
+  const x0 = pad, x1 = W - 276 - pad;
+  const y0 = 74 + pad, y1 = H - pad;
+  const availW = Math.max(80, x1 - x0), availH = Math.max(80, y1 - y0);
+
+  // 방향은 사용자가 고른 대로 지킨다 (대각선 45도 / 위 90도).
+  //   왼손 = 오른쪽 위, 오른손 = 왼쪽 위.
+  // "자동" 일 때만 45도에서 시작해 양쪽으로 벌려가며 들어가는 각도를 찾는다.
+  // 측정은 두 점 사이 거리라 회전과 무관 -> 각도를 바꿔도 정확도 손해가 없다.
+  // (엄지까지 포함한 실제 외곽을 재야 하므로 각도별로 path bbox 를 직접 측정한다.)
+  const probe = el("path");
+  svg.appendChild(probe);
+  HAND.x = 0; HAND.y = 0;
+  const tryDeg = deg => {
+    const th = deg * Math.PI / 180;
+    HAND.ang = HAND.side === 1 ? -th : -(Math.PI - th);
+    probe.setAttribute("d", handPathD());
+    const b = probe.getBBox();
+    return { ang:HAND.ang, x:b.x, y:b.y, w:b.width, h:b.height,
+             over:Math.max(b.width / availW, b.height / availH) };
+  };
+
+  let best = null;
+  if(HAND.orient === "auto"){
+    const CANDS = [45];
+    for(let d = 5; d <= 90; d += 5){
+      if(45 + d <= 90) CANDS.push(45 + d);
+      if(45 - d >= 0)  CANDS.push(45 - d);
+    }
+    for(const deg of CANDS){
+      const r = tryDeg(deg);
+      if(!best || r.over < best.over) best = r;
+      if(r.over <= 1) break;
+    }
+  }else{
+    best = tryDeg(HAND.orient === "up" ? 90 : 45);
+  }
+  probe.remove();
+
+  HAND.ang = best.ang;
+  HAND.x = (x0 + x1) / 2 - (best.x + best.w / 2);   // bbox 를 영역 중앙에 정렬
+  HAND.y = (y0 + y1) / 2 - (best.y + best.h / 2);
+  fitsArea = best.over <= 1;
+  sel = null;
+}
+
+function drawStage(){
+  const svg = $("#stage");
+  svg.textContent = "";
+  const ky = HAND.pr * HAND.L;
+
+  // 손 윤곽선
+  svg.appendChild(el("path", { d:handPathD(), fill:"#5b9dff14",
+    stroke:"#5b9dff", "stroke-width":2.5, "stroke-linejoin":"round" }));
+
+  // 측정 기준선: 손목선 / 너클선 / 길이축
+  const seg = (a, b, c, w) => {
+    const p = toStage(a[0], a[1]), q = toStage(b[0], b[1]);
+    svg.appendChild(el("line", { x1:p.x, y1:p.y, x2:q.x, y2:q.y, stroke:c,
+      "stroke-width":w || 2, "stroke-dasharray":"7 6" }));
+  };
+  seg([-HAND.W * 0.32, 0], [HAND.W * 0.32, 0], "#5b9dff");
+  seg([-HAND.W / 2, ky], [HAND.W / 2, ky], "#ffb648");
+  seg([0, 0], [0, HAND.L], "#3ecf8e", 1.5);
+
+  // 손잡이. 측정에 쓰는 것은 손목/중지끝/너비 3종뿐이므로 그것만 크게 보여주고,
+  // 손가락·엄지 미세조정(윤곽선 모양 전용)은 "세부 조정"을 켰을 때만 꺼낸다.
+  const FC = "#a99bff";
+  handles = [
+    { id:"wrist",  u:0,                  v:-OFF,         c:"#6d8fff", lab:t("hnd.wrist"), au:0,         av:0 },
+    { id:"tip",    u:0,                  v:HAND.L + OFF, c:"#3ddc97", lab:t("hnd.tip"),   au:0,         av:HAND.L },
+    { id:"kThumb", u:-(HAND.W/2 + OFF),  v:ky,           c:"#ffc24b", lab:t("hnd.width"), au:-HAND.W/2, av:ky },
+    { id:"kPinky", u:  HAND.W/2 + OFF,   v:ky,           c:"#ffc24b", lab:t("hnd.width"), au:HAND.W/2,  av:ky },
+  ];
+  if(showDetail){
+    [[0,t("hnd.index")],[2,t("hnd.ring")],[3,t("hnd.pinky")]].forEach(f => {
+      handles.push({ id:"f" + f[0], u:fTip(f[0]), v:fTv(f[0]) + OFF, c:FC, lab:f[1], sm:1,
+                     au:fTip(f[0]), av:fTv(f[0]) });
+    });
+    const tg = thumbGeom();
+    handles.push({ id:"thumb", u:tg.T.u + tg.d.u * OFF, v:tg.T.v + tg.d.v * OFF, c:FC, lab:t("hnd.thumb"), sm:1,
+                   au:tg.T.u, av:tg.T.v });
+    handles.push({ id:"thumbW", c:FC, lab:t("hnd.thumbw"), sm:1,
+                   u:tg.mid.u - tg.n.u * (tg.tw + OFF), v:tg.mid.v - tg.n.v * (tg.tw + OFF),
+                   au:tg.mid.u - tg.n.u * tg.tw,        av:tg.mid.v - tg.n.v * tg.tw });
+  }
+
+  handles.forEach(h => {
+    const p = toStage(h.u, h.v), a = toStage(h.au, h.av);
+    h.px = p.x; h.py = p.y;
+    svg.appendChild(el("line", { x1:a.x, y1:a.y, x2:p.x, y2:p.y,
+      stroke:h.c, "stroke-width":1.5, opacity:.45 }));
+    const on = sel === h.id;
+    const r  = h.sm ? (on ? 9 : 7) : (on ? 13 : 10);
+    if(on) svg.appendChild(el("circle", { cx:p.x, cy:p.y, r:r + 7, fill:h.c, opacity:.16 }));
+    svg.appendChild(el("circle", { cx:p.x, cy:p.y, r:r, fill:h.c,
+      stroke:"#0b0d12", "stroke-width":on ? 3 : 2 }));
+    // 라벨 알약 — 한 글자 약어보다 읽는 부담이 훨씬 적다
+    const fs  = h.sm ? 10.5 : 12;
+    const wpx = h.lab.length * fs * 1.02 + 14;
+    const lx  = p.x + r + 7, ly = p.y;
+    svg.appendChild(el("rect", { x:lx, y:ly - fs * 0.85, width:wpx, height:fs * 1.75,
+      rx:fs * 0.875, fill:"#0b0d12", stroke:h.c, "stroke-width":1, opacity:h.sm ? .82 : .95 }));
+    svg.appendChild(el("text", { x:lx + wpx / 2, y:ly + fs * 0.36, "text-anchor":"middle",
+      "font-size":fs, "font-weight":700, fill:h.c }, h.lab));
+  });
+
+  // 치수 라벨은 윤곽선 바깥에
+  const ppm = st.pxPerMm;
+  const lp = toStage(30, HAND.L + OFF + 34);
+  svg.appendChild(el("text", { x:lp.x, y:lp.y, fill:"#3ddc97", "font-size":13, "font-weight":750,
+    "text-anchor":"middle" }, f1(HAND.L / ppm) + " mm"));
+  const wp = toStage(HAND.W / 2 + OFF, ky - 28);
+  svg.appendChild(el("text", { x:wp.x, y:wp.y, fill:"#ffc24b", "font-size":13, "font-weight":750,
+    "text-anchor":"middle" }, f1(HAND.W / ppm) + " mm"));
+}
+
+/** 도움말 도식. 측정 화면과 "같은" handPathD() 로 그려서 윤곽선이 절대 어긋나지 않게 한다.
+    HAND 를 잠깐 도식용 값으로 바꿔 path 를 뽑고 즉시 원상 복구한다. */
+function buildHelpFigure(){
+  const svg = $("#helpFig");
+  if(!svg) return;
+  const save = { x:HAND.x, y:HAND.y, L:HAND.L, W:HAND.W, pr:HAND.pr, ang:HAND.ang,
+                 side:HAND.side, fr:HAND.fr, fo:HAND.fo, thumb:HAND.thumb };
+
+  HAND.L = 250; HAND.W = 250 * DEF.W / DEF.L; HAND.pr = DEF.pr;
+  HAND.ang = -Math.PI / 2; HAND.side = 1;           // 왼손 손등, 손가락 위
+  HAND.fr = FR0.slice(); HAND.fo = [0, 0, 0, 0];
+  HAND.thumb = { tu:-0.84, tv:0.20, w:1 };
+  HAND.x = 135; HAND.y = 295;
+
+  const ky = fKy(), hw = HAND.W * 0.32;             // 손목 반폭 = 윤곽선의 ww/2
+  const d   = handPathD();
+  const wl  = toStage(-hw, 0),          wr = toStage(hw, 0), wm = toStage(0, 0);
+  const kl  = toStage(-HAND.W / 2, ky), kr = toStage(HAND.W / 2, ky);
+  const tip = toStage(0, HAND.L);
+
+  Object.assign(HAND, save);                        // 측정 상태 복구
+
+  svg.textContent = "";
+  svg.appendChild(el("path", { d:d, fill:"#252d3d", stroke:"#5b7fa8", "stroke-width":1.5,
+                               "stroke-linejoin":"round" }));
+  const dash = (a, b, c) => svg.appendChild(el("line", { x1:a.x, y1:a.y, x2:b.x, y2:b.y,
+    stroke:c, "stroke-width":2, "stroke-dasharray":"6 5" }));
+  dash(kl, kr, "#ffc24b");
+  dash(wl, wr, "#6d8fff");
+  svg.appendChild(el("line", { x1:tip.x, y1:tip.y, x2:wm.x, y2:wm.y, stroke:"#3ddc97",
+    "stroke-width":1.5, "stroke-dasharray":"3 4", opacity:.7 }));
+  [[kl,"#ffc24b"],[kr,"#ffc24b"],[wl,"#6d8fff"],[wr,"#6d8fff"],[tip,"#3ddc97"]]
+    .forEach(p => svg.appendChild(el("circle", { cx:p[0].x, cy:p[0].y, r:6, fill:p[1] })));
+  svg.appendChild(el("circle", { cx:wm.x, cy:wm.y, r:4.5, fill:"#6d8fff" }));
+
+  const lab = (x, y, c, txt, anchor) => svg.appendChild(el("text", { x:x, y:y, fill:c,
+    "font-size":12, "font-weight":700, "text-anchor":anchor || "middle" }, txt));
+  lab(tip.x, tip.y - 14, "#3ddc97", t("help.figTip"));
+  lab(kr.x + 10, kr.y + 4, "#ffc24b", t("help.figKnuckle"), "start");
+  lab(wm.x, wm.y + 24, "#6d8fff", t("help.figWrist"));
+
+  const b = svg.getBBox(), m = 8;
+  svg.setAttribute("viewBox",
+    (b.x - m) + " " + (b.y - m) + " " + (b.width + m * 2) + " " + (b.height + m * 2));
+}
+
+function renderMeasureUI(){
+  const m = measures();
+  $("#lvLen").innerHTML  = f1(m.lenMm)   + "<small>mm</small>";
+  $("#lvWid").innerHTML  = f1(m.widthMm) + "<small>mm</small>";
+  $("#lvPalm").innerHTML = f1(m.palmMm)  + "<small>mm</small>";
+
+  $("#sideL").className  = HAND.side ===  1 ? "on" : "";
+  $("#sideR").className  = HAND.side === -1 ? "on" : "";
+  $("#orDiag").className = HAND.orient === "diag" ? "on" : "";
+  $("#orUp").className   = HAND.orient === "up"   ? "on" : "";
+  $("#orAuto").className = HAND.orient === "auto" ? "on" : "";
+  $("#mDetail").textContent = showDetail ? t("measure.detailOff") : t("measure.detail");
+
+  // 체크리스트 — 해당 손잡이를 한 번이라도 움직이면 완료로 표시
+  $$("#mChecks li").forEach(li => {
+    const k = li.dataset.c;
+    const done = k === "width" ? (touched.has("kThumb") || touched.has("kPinky")) : touched.has(k);
+    li.className = done ? "ok" : "";
+  });
+
+  const fw = $("#fitWarn");
+  fw.hidden = fitsArea;
+  if(!fitsArea){
+    fw.innerHTML = t("measure.fitWarn") +
+      '<div class="row" style="gap:6px;margin-top:9px">' +
+        '<button class="btn-sm" id="fitFull">' + t("measure.fitFull") + '</button>' +
+        '<button class="btn-sm" id="fitAuto">' + t("measure.fitAuto") + '</button></div>';
+    $("#fitFull").onclick = () => $("#mFull").click();
+    $("#fitAuto").onclick = () => { HAND.orient = "auto"; resetHand(); renderMeasureUI(); };
+  }
+  drawStage();
+}
+
+/** 손잡이를 mx,my 로 옮겼을 때 모델 파라미터를 갱신 */
+function applyDrag(id, mx, my){
+  const ppm = st.pxPerMm;
+  touched.add(id);
+  if(id === "wrist"){
+    // 손목 손잡이는 윤곽선 아래 OFF 지점에 있으므로, 그만큼 되돌려 손목 중점을 잡는다
+    const ca = Math.cos(HAND.ang), sa = Math.sin(HAND.ang);
+    HAND.x = mx + ca * OFF;
+    HAND.y = my + sa * OFF;
+    return;
+  }
+  if(id === "tip"){
+    // 중지 끝 = 손 길이의 기준축. 길이와 각도를 함께 정한다.
+    const dx = mx - HAND.x, dy = my - HAND.y;
+    const r = Math.hypot(dx, dy);
+    if(r < 30) return;
+    HAND.ang = Math.atan2(dy, dx);
+    HAND.L = clamp(r - OFF, 110 * ppm, 260 * ppm);
+    return;
+  }
+  const p = toLocal(mx, my);
+  if(id[0] === "f"){
+    // 손가락별: 축 방향 = 그 손가락 길이, 수직 방향 = 손끝 좌우 위치(벌어진 손가락)
+    const i = +id.slice(1);
+    HAND.fr[i] = clamp((p.v - OFF - fKy()) / fFl(), 0.30, 1.45);
+    HAND.fo[i] = clamp(p.u - (fLo(i) + fHi(i)) / 2, -fUnit() * 0.9, fUnit() * 0.9);
+    return;
+  }
+  if(id === "thumbW"){
+    // 엄지 축에서의 수직 거리 = 반폭. 현재 반폭 대비 비율로 w 를 갱신한다.
+    const t = thumbGeom();
+    const perp = Math.abs((p.u - t.M.u) * t.n.u + (p.v - t.M.v) * t.n.v);
+    const want = Math.max(2, perp - OFF);
+    HAND.thumb.w = clamp((HAND.thumb.w || 1) * (want / Math.max(t.tw, 0.5)), 0.55, 1.8);
+    return;
+  }
+  if(id === "thumb"){
+    // 엄지 뿌리(M)에서 본 방향/거리로 끝 위치를 정한다. 손잡이 오프셋만큼 되돌림.
+    const t = thumbGeom();
+    let du = p.u - t.M.u, dv = p.v - t.M.v;
+    const dl = Math.hypot(du, dv) || 1;
+    const len = clamp(dl - OFF, HAND.W * 0.38, HAND.W * 1.15);
+    HAND.thumb.tu = clamp((t.M.u + du / dl * len) / HAND.W, -1.6, 0.10);
+    HAND.thumb.tv = clamp((t.M.v + dv / dl * len) / fKy(), -0.80, 1.20);
+    return;
+  }
+  // 너클 손잡이: 수직 성분 -> 너비, 축 성분 -> 너클선 높이(손바닥 비율)
+  HAND.W  = clamp((Math.abs(p.u) - OFF) * 2, 50 * ppm, 130 * ppm);
+  HAND.pr = clamp(p.v / HAND.L, 0.36, 0.64);
+}
+
+const stageEl = $("#stage");
+/** 손 전체가 화면 밖으로 사라져 다시 잡을 수 없게 되는 것을 막는다. */
+function clampHandPos(){
+  const svg = $("#stage");
+  HAND.x = clamp(HAND.x, 12, Math.max(40, svg.clientWidth - 12));
+  HAND.y = clamp(HAND.y, 86, Math.max(120, svg.clientHeight - 12));
+}
+
+let pan = null;
+stageEl.addEventListener("pointerdown", e => {
+  if(e.pointerType === "touch") return;              // 화면에 닿은 손바닥은 무시
+  const r = stageEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = 26;
+  for(const h of handles){
+    const d = Math.hypot(h.px - x, h.py - y);
+    if(d < bd){ bd = d; best = h.id; }
+  }
+  stageEl.setPointerCapture(e.pointerId);
+  if(best){
+    sel = best; drag = best; pan = null;
+  }else{
+    // 손잡이가 아닌 곳 -> 손 전체 이동.
+    // 실제 크기 손은 화면을 넘칠 수 있어서 손목 손잡이가 화면 밖에 있을 수 있다.
+    // 아무 데나 드래그해서 옮길 수 있어야 한다.
+    drag = "pan"; sel = null;
+    pan = { mx:x, my:y, hx:HAND.x, hy:HAND.y };
+    stageEl.classList.add("grabbing");
+  }
+  renderMeasureUI();
+});
+stageEl.addEventListener("pointermove", e => {
+  if(!drag) return;
+  const r = stageEl.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  if(drag === "pan"){
+    HAND.x = pan.hx + (x - pan.mx);
+    HAND.y = pan.hy + (y - pan.my);
+    clampHandPos();
+  }else{
+    applyDrag(drag, x, y);
+  }
+  renderMeasureUI();
+});
+const endDrag = () => { drag = null; pan = null; stageEl.classList.remove("grabbing"); };
+stageEl.addEventListener("pointerup",     endDrag);
+stageEl.addEventListener("pointercancel", endDrag);
+
+// 터치스크린에서 손바닥 접촉이 스크롤/클릭으로 새는 것 방지
+["touchstart","touchmove","touchend"].forEach(t =>
+  $("#s-measure").addEventListener(t, e => e.preventDefault(), { passive:false }));
+
+addEventListener("keydown", e => {
+  if(!$("#help").hidden && e.key === "Escape"){ $("#help").hidden = true; return; }
+  if($("#s-measure").hidden) return;
+  const d = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+  if(!d) return;
+  e.preventDefault();
+  const s = e.shiftKey ? 5 : 1;
+  if(!sel){                                  // 손잡이 미선택 -> 손 전체 이동
+    HAND.x += d[0] * s * 4; HAND.y += d[1] * s * 4;
+    clampHandPos();
+  }else{
+    const h = handles.find(h => h.id === sel);
+    applyDrag(sel, h.px + d[0] * s, h.py + d[1] * s);
+  }
+  renderMeasureUI();
+});
+
+addEventListener("resize", () => {
+  if(!$("#s-cal").hidden)     renderCal();
+  if(!$("#s-measure").hidden) layoutStage();
+  checkDrift();
+});
+
+/* ============ 4. 결과 ============ */
+/* 성인 손 길이 참고치 (대략, 문헌 평균). 정밀 통계가 아니라 "내 손이 어디쯤인가" 감만 준다. */
+const NORM = { f:{ mean:172, sd:8, k:"F" }, m:{ mean:189, sd:9, k:"M" } };
+
+function renderDist(len){
+  const LO = 150, HI = 220;
+  const pos = v => clamp((v - LO) / (HI - LO) * 100, 0, 100);
+  const tick = (v, lab) =>
+    '<div class="tick" style="left:' + pos(v) + '%"></div>' +
+    '<div class="tlab" style="left:' + pos(v) + '%">' + lab + '</div>';
+  $("#dist").innerHTML =
+    '<div class="track"></div>' +
+    tick(NORM.f.mean, t("result.distF") + " " + NORM.f.mean) +
+    tick(NORM.m.mean, t("result.distM") + " " + NORM.m.mean) +
+    '<div class="you" style="left:' + pos(len) + '%"></div>' +
+    '<div class="youlab" style="left:' + pos(len) + '%">' + t("result.distYou") + " " + f1(len) + '</div>';
+
+  const dm = (len - NORM.m.mean) / NORM.m.sd, df = (len - NORM.f.mean) / NORM.f.sd;
+  const near = Math.abs(dm) <= Math.abs(df) ? NORM.m : NORM.f;
+  const d = len - near.mean;
+  const cmp = Math.abs(d) < 3 ? t("result.nearAvg")
+            : d > 0 ? t("result.bigger",  { n:f1(d) })
+                    : t("result.smaller", { n:f1(d) });
+  $("#distNote").innerHTML = t("result.distNote", {
+    who:t(near.k === "M" ? "result.normM" : "result.normF"), mean:near.mean, cmp:cmp });
+}
+
+function renderResult(){
+  const m = measures();
+  $("#rLen").innerHTML  = f1(m.lenMm)   + '<span class="unit"> mm</span>';
+  $("#rWid").innerHTML  = f1(m.widthMm) + '<span class="unit"> mm</span>';
+  $("#rPalm").innerHTML = f1(m.palmMm)  + '<span class="unit"> mm</span>';
+  $("#truth").placeholder = Math.round(m.lenMm);
+  renderDist(m.lenMm);
+
+  $("#rJson").textContent = JSON.stringify({
+    handLengthMm: +f1(m.lenMm),
+    handWidthMm:  +f1(m.widthMm),
+    palmLengthMm: +f1(m.palmMm),
+    hand: HAND.side === 1 ? "left" : "right",
+    calibration: { pxPerMm:+st.pxPerMm.toFixed(4), ref:st.ref,
+                   dpr:devicePixelRatio, screen:screenSig() },
+    model: { L:Math.round(HAND.L), W:Math.round(HAND.W), palmRatio:+HAND.pr.toFixed(3),
+             angleDeg:Math.round(HAND.ang * 180 / Math.PI) },
+    measuredAt: new Date().toISOString()
+  }, null, 2);
+
+  $("#diag").textContent = ""; $("#diag").className = "";
+  $("#fixWrap").hidden = true;
+  $("#palmEst").hidden = !m.est;
+  if(m.est) $("#palmEst").textContent = t("result.palmEst");
+  writeHash();
+}
+
+$("#diagBtn").onclick = () => {
+  const truth = parseFloat($("#truth").value);
+  const m = measures(), d = $("#diag");
+  if(!truth){ d.className = "warn"; d.textContent = t("diag.enter"); return; }
+  const err = m.lenMm - truth, pct = err / truth * 100, a = Math.abs(err);
+  const sg = n => (n > 0 ? "+" : "");
+  d.className = a <= 3 ? "ok" : a <= 8 ? "warn" : "bad";
+  d.innerHTML = t("diag.result", { got:f1(m.lenMm), truth:truth,
+                    err:sg(err) + f1(err), pct:sg(pct) + pct.toFixed(1) }) +
+    (a <= 3 ? t("diag.good") : a <= 8 ? t("diag.mid") : t("diag.bad"));
+  $("#fixWrap").hidden = a <= 3;
+  $("#fixWrap").dataset.k = (m.lenMm / truth).toFixed(5);
+};
+
+$("#fixCal").onclick = () => {
+  const k = parseFloat($("#fixWrap").dataset.k);
+  if(!k || !isFinite(k) || k <= 0) return;
+  st.pxPerMm *= k;                            // 측정값이 컸으면 pxPerMm 를 키워 mm 를 줄인다
+  st.widthPx = REFS[st.ref].w * st.pxPerMm;
+  saveCal();
+  renderResult();
+  $("#diag").className = "ok";
+  $("#diag").innerHTML = t("diag.applied", { n:((k - 1) * 100).toFixed(2) });
+};
+
+$("#copyJson").onclick = async () => {
+  try{
+    await navigator.clipboard.writeText($("#rJson").textContent);
+    $("#copyJson").textContent = t("result.copied");
+    setTimeout(() => { $("#copyJson").textContent = t("result.copy"); }, 1400);
+  }catch(e){ $("#copyJson").textContent = t("result.copyFail"); }
+};
+
+/* =====================================================================
+   5~6. 그립 선택 + 추천 엔진
+   ---------------------------------------------------------------------
+   기준: 마우스 길이/높이는 "손 길이" 대비, 너비는 "손 너비" 대비 비율로 본다.
+   그립이 크기를 크게 흔든다 — 같은 손이라도 팜과 핑거팁의 권장 길이는 15mm 넘게 차이난다.
+   아래 비율은 커뮤니티 통용 가이드를 정리한 값이라, 실사용 피드백으로 보정해야 한다.
+   ===================================================================== */
+const GRIPS = {
+  palm:      { lr:[0.655, 0.720], wr:[0.700, 0.820], hr:[0.205, 0.245] },
+  claw:      { lr:[0.620, 0.685], wr:[0.680, 0.800], hr:[0.190, 0.230] },
+  fingertip: { lr:[0.575, 0.645], wr:[0.650, 0.780], hr:[0.170, 0.210] },
+};
+const gripName = k => t("gripname." + k);
+
+const FILTERS = [
+  { k:"wl",     opts:["any","y","n"] },
+  { k:"weight", opts:["any","light","heavy"] },
+  { k:"shape",  opts:["any","sym","ergo"] },
+  { k:"price",  opts:["any","1","2"] },
+];
+const pick = { grip:"claw", wl:"any", weight:"any", shape:"any", price:"any" };
+
+/** 그립별 옆모습 도식.
+    마우스 윤곽은 공통이고, 달라지는 것은 (1) 손이 마우스에 얼마나 붙는가
+    (2) 손가락이 얼마나 세워지는가 (3) 어디가 닿는가 — 이 셋이다.
+    손은 어두운 밑선 + 밝은 윗선 2겹으로 그려 마우스 위에서 분리돼 보이게 한다. */
+function gripSvg(key){
+  const G = {
+    palm: {
+      // 손바닥 전체가 마우스에 얹히고 손가락도 버튼 위에 눕는다
+      arm:"M 4 96 C 12 74, 28 54, 52 47 C 72 41, 92 42, 110 48",
+      fing:["M 110 48 C 126 53, 140 64, 151 80", "M 104 53 C 118 59, 131 70, 141 85"],
+      dots:[[52,52],[74,50],[98,52],[122,62],[143,76]],
+      cap:"gripcap.palm"
+    },
+    claw: {
+      // 손바닥 뒤꿈치만 뒤쪽 험프에 닿고, 손가락은 세워서 구부린다
+      arm:"M 2 92 C 12 76, 26 62, 43 55 C 58 38, 76 32, 88 31",
+      fing:["M 88 31 C 95 33, 101 42, 105 52", "M 81 35 C 88 38, 93 45, 97 51"],
+      dots:[[43,62],[106,56]],
+      cap:"gripcap.claw"
+    },
+    fingertip: {
+      // 손바닥은 완전히 뜨고 손가락 끝만 앞쪽에 닿는다
+      arm:"M 6 86 C 2 56, 24 26, 60 20 C 86 15, 102 25, 110 38",
+      fing:["M 110 38 C 118 49, 126 58, 132 67", "M 102 42 C 110 53, 118 61, 124 66"],
+      dots:[[132,68],[124,66]],
+      cap:"gripcap.fingertip"
+    },
+  }[key];
+
+  const band = (d, wOut, wIn) =>
+    '<path d="' + d + '" fill="none" stroke="#0b0d12" stroke-width="' + wOut +
+      '" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="' + d + '" fill="none" stroke="#6d8fff" stroke-width="' + wIn +
+      '" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>';
+
+  return '<svg viewBox="0 0 180 128" aria-label="' + gripName(key) + '">' +
+    // 바닥
+    '<line x1="4" y1="102" x2="176" y2="102" stroke="#2c3444" stroke-width="2" stroke-linecap="round"/>' +
+    // 마우스 본체 + 휠 + 버튼 경계
+    '<path d="M 34 102 L 34 84 C 35 65, 49 52, 72 51 C 99 50, 128 59, 146 77 L 146 102 Z" ' +
+      'fill="#1b2130" stroke="#46536b" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M 78 51.5 L 78 58" stroke="#46536b" stroke-width="1.3" stroke-linecap="round"/>' +
+    '<ellipse cx="90" cy="52" rx="5.5" ry="2.8" fill="#46536b"/>' +
+    // 손
+    band(G.arm, 21, 15) + G.fing.map(f => band(f, 13, 8.5)).join("") +
+    // 접촉점
+    G.dots.map(d => '<circle cx="' + d[0] + '" cy="' + d[1] + '" r="4.6" fill="#3ddc97" ' +
+      'stroke="#0b0d12" stroke-width="1.6"/>').join("") +
+    // 범례 + 요약
+    '<circle cx="10" cy="118" r="3.6" fill="#3ddc97"/>' +
+    '<text x="19" y="121.5" fill="#7f8ba3" font-size="8.5">' + t("grip.contact") + '</text>' +
+    '<text x="176" y="121.5" fill="#9ab4ff" font-size="9.5" font-weight="700" text-anchor="end">' +
+      t(G.cap) + '</text>' +
+    "</svg>";
+}
+
+function renderGripScreen(){
+  $("#gripGrid").innerHTML = Object.keys(GRIPS).map(k =>
+    '<button class="gripcard' + (pick.grip === k ? " on" : "") + '" data-grip="' + k + '" type="button">' +
+    gripSvg(k) + '<div class="gn">' + gripName(k) + '</div>' +
+    '<div class="gd">' + t("gripdesc." + k) + '</div></button>').join("");
+  $$("#gripGrid .gripcard").forEach(b => b.onclick = () => { pick.grip = b.dataset.grip; renderGripScreen(); });
+
+  $("#filters").innerHTML = FILTERS.map(f =>
+    '<div class="fld"><label>' + t("filter." + f.k) + '</label><div class="seg">' +
+    f.opts.map(o => '<button' + (pick[f.k] === o ? ' class="on"' : '') +
+      ' data-f="' + f.k + '" data-v="' + o + '">' + t("filter." + f.k + "." + o) +
+      '</button>').join("") + '</div></div>').join("");
+  $$("#filters button").forEach(b => b.onclick = () => {
+    pick[b.dataset.f] = b.dataset.v; renderGripScreen();
+  });
+}
+
+function targets(){
+  const m = measures(), g = GRIPS[pick.grip];
+  return { l:[m.lenMm * g.lr[0], m.lenMm * g.lr[1]],
+           w:[m.widthMm * g.wr[0], m.widthMm * g.wr[1]],
+           h:[m.lenMm * g.hr[0], m.lenMm * g.hr[1]] };
+}
+
+/** 범위 중앙이 1.0, 가장자리 0.88, 바깥은 계속 감점.
+    "범위 안이면 전부 만점"으로 하면 상위권이 전부 100% 동점이 되어 순위가 무의미해진다. */
+function bandScore(v, lo, hi){
+  const c = (lo + hi) / 2, half = (hi - lo) / 2 || 1;
+  const d = Math.abs(v - c);
+  if(d <= half){ const t = d / half; return 1 - 0.12 * t * t; }
+  return Math.max(0, 0.88 - (d - half) / Math.max(half * 2.2, 8));
+}
+
+function recommend(){
+  const T = targets();
+  const DB = window.MOUSE_DB || [];
+  return DB
+    .filter(m => pick.wl     === "any" || (pick.wl === "y") === !!m.wl)
+    .filter(m => pick.shape  === "any" || m.shape === pick.shape)
+    .filter(m => pick.weight === "any" || (pick.weight === "light" ? m.g <= 70 : m.g >= 85))
+    .filter(m => pick.price  === "any" || m.price <= +pick.price)
+    .map(m => {
+      const sl = bandScore(m.l, T.l[0], T.l[1]);
+      const sw = bandScore(m.w, T.w[0], T.w[1]);
+      const sh = bandScore(m.h, T.h[0], T.h[1]);
+      const sg = (m.grips || []).indexOf(pick.grip) >= 0 ? 1 : 0;
+      // 길이가 체감에 가장 크게 작용하고, 그 다음이 높이(험프), 너비는 스펙 편차가 커서 낮게 둔다
+      return { m:m, T:T, sl:sl, sw:sw, sh:sh, sg:sg,
+               score:0.52 * sl + 0.22 * sh + 0.20 * sw + 0.06 * sg };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+function chips(r){
+  const j = (v, band, dim) => {
+    const lo = Math.round(band[0]), hi = Math.round(band[1]), d = t("chip." + dim);
+    if(v < band[0] - 0.5) return { c:"bad", t:t("chip.small", { d:d, v:v, lo:lo, hi:hi }) };
+    if(v > band[1] + 0.5) return { c:"bad", t:t("chip.big",   { d:d, v:v, lo:lo, hi:hi }) };
+    return { c:"ok", t:t("chip.ok", { d:d }) };
+  };
+  const out = [j(r.m.l, r.T.l, "len"), j(r.m.h, r.T.h, "hei"), j(r.m.w, r.T.w, "wid")];
+  if(r.sg) out.push({ c:"ok", t:t("chip.gripFit", { g:gripName(pick.grip) }) });
+  return out.map(c => '<span class="chip ' + c.c + '">' + c.t + "</span>").join("");
+}
+
+function renderRec(){
+  const T = targets(), m = measures(), g = GRIPS[pick.grip];
+  const rg = (b, u) => Math.round(b[0]) + "~" + Math.round(b[1]) + "<small> " + (u || "mm") + "</small>";
+  $("#recRange").innerHTML =
+    "<h3>" + t("rec.rangeTitle") + "</h3>" +
+    '<p style="margin-bottom:0">' + t("rec.rangeNote", {
+      len:f1(m.lenMm), wid:f1(m.widthMm), grip:gripName(pick.grip) }) + "</p>" +
+    '<div class="rng">' +
+      '<div><div class="k">' + t("rec.len") + '</div><div class="v">' + rg(T.l) + "</div></div>" +
+      '<div><div class="k">' + t("rec.wid") + '</div><div class="v">' + rg(T.w) + "</div></div>" +
+      '<div><div class="k">' + t("rec.hei") + '</div><div class="v">' + rg(T.h) + "</div></div>" +
+    "</div>";
+
+  const list = recommend();
+  if(!list.length){
+    $("#recList").innerHTML = '<div class="empty">' + t("rec.empty") + '</div>';
+    return;
+  }
+  $("#recList").innerHTML = list.slice(0, 12).map((r, i) => {
+    const pct = Math.round(r.score * 100);
+    return '<div class="mrow' + (i === 0 ? " top" : "") + '">' +
+      '<div class="fill" style="width:' + pct + '%"></div>' +
+      '<div class="mhead"><span class="bd">' + r.m.brand + '</span>' +
+      '<span class="nm">' + r.m.name + '</span><span class="pc">' + pct + "%</span></div>" +
+      '<div class="mspec">' + r.m.l + " × " + r.m.w + " × " + r.m.h + " mm · " + r.m.g + "g · " +
+        t(r.m.shape === "sym" ? "spec.sym" : "spec.ergo") + " · " +
+        t(r.m.wl ? "spec.wireless" : "spec.wired") + "</div>" +
+      '<div class="mwhy">' + chips(r) + "</div></div>";
+  }).join("");
+}
+
+/* ============ 화면 전환 ============ */
+const STEP_OF = { "#s-intro":0, "#s-manual":0, "#s-cal":1, "#s-measure":2, "#s-result":2, "#s-grip":3, "#s-rec":4 };
+
+function show(id){
+  $$(".screen").forEach(el => el.hidden = true);
+  $(id).hidden = false;
+  const n = STEP_OF[id];
+  const bar = $("#stepper");
+  bar.hidden = (id === "#s-intro" || id === "#s-manual" || id === "#s-measure");
+  $("#langBtn").hidden = (id === "#s-measure");              // 상단바와 겹침
+  $$("#stepper .stp").forEach(el => {
+    const i = +el.dataset.st;
+    el.className = "stp" + (i === n ? " on" : i < n ? " done" : "");
+  });
+  if(id !== "#s-measure") scrollTo(0, 0);
+}
+
+function startMeasure(fresh){
+  show("#s-measure");                 // 먼저 보이게 해야 clientWidth/Height 를 읽을 수 있다
+  // 실제 크기 손은 세로 700px 가까이 필요하다. 측정 단계는 전체화면이 기본.
+  if(!document.fullscreenElement){
+    const r = document.documentElement.requestFullscreen();
+    if(r && r.catch) r.catch(() => {});
+  }
+  const svg = $("#stage");
+  svg.setAttribute("viewBox", "0 0 " + svg.clientWidth + " " + svg.clientHeight);
+  manual = null;                      // 실측이 직접 입력값을 대체한다
+  if(fresh || !HAND.L){ resetHand(); touched.clear(); }
+  renderMeasureUI();
+}
+function leaveMeasure(to){
+  if(document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  show(to);
+}
+
+$("#goCal").onclick    = () => { show("#s-cal"); renderRefGrid(); renderCal(); };
+$("#goSaved").onclick  = () => startMeasure(true);
+$("#calBack").onclick  = () => show("#s-intro");
+$("#calNext").onclick  = () => { saveCal(); startMeasure(true); };
+$("#mExit").onclick    = () => leaveMeasure("#s-intro");
+$("#mDone").onclick    = () => { leaveMeasure("#s-result"); renderResult(); };
+$("#mReset").onclick   = () => { resetHand(); touched.clear(); renderMeasureUI(); };
+$("#mDetail").onclick  = () => { showDetail = !showDetail; sel = null; renderMeasureUI(); };
+$("#sideL").onclick    = () => { HAND.side =  1;       resetHand(); renderMeasureUI(); };
+$("#sideR").onclick    = () => { HAND.side = -1;       resetHand(); renderMeasureUI(); };
+$("#orDiag").onclick   = () => { HAND.orient = "diag"; resetHand(); renderMeasureUI(); };
+$("#orUp").onclick     = () => { HAND.orient = "up";   resetHand(); renderMeasureUI(); };
+$("#orAuto").onclick   = () => { HAND.orient = "auto"; resetHand(); renderMeasureUI(); };
+$("#mFull").onclick    = () => {
+  if(document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else document.documentElement.requestFullscreen().catch(() => {});
+};
+addEventListener("fullscreenchange", () => {
+  if($("#s-measure").hidden) return;
+  setTimeout(() => { layoutStage(); resetHand(); renderMeasureUI(); }, 120);
+});
+$("#mHelp").onclick     = () => { $("#help").hidden = false; buildHelpFigure(); };
+$("#helpClose").onclick = () => { $("#help").hidden = true; };
+$("#help").onclick      = e => { if(e.target.id === "help") $("#help").hidden = true; };
+$("#rAgain").onclick    = () => startMeasure(false);
+$("#rRecal").onclick    = () => { show("#s-cal"); renderRefGrid(); renderCal(); };
+$("#goGrip").onclick    = () => { show("#s-grip"); renderGripScreen(); };
+$("#gBack").onclick     = () => { show("#s-result"); renderResult(); };
+$("#gNext").onclick     = () => { show("#s-rec"); renderRec(); };
+$("#recBack").onclick   = () => { show("#s-grip"); renderGripScreen(); };
+$("#recRemeasure").onclick = () => startMeasure(false);
+$("#langBtn").onclick   = () => setLang(LANG === "ko" ? "en" : "ko");
+$("#goManual").onclick  = () => { show("#s-manual"); $("#mnErr").hidden = true; };
+$("#mnBack").onclick    = () => show("#s-intro");
+$("#mnGo").onclick      = () => {
+  const len = parseFloat($("#mnLen").value), wid = parseFloat($("#mnWid").value);
+  if(!(len >= 120 && len <= 250 && wid >= 55 && wid <= 130)){
+    $("#mnErr").hidden = false; $("#mnErr").textContent = t("manual.err"); return;
+  }
+  $("#mnErr").hidden = true;
+  setManual(len, wid);
+  show("#s-result"); renderResult();
+};
+$("#shareBtn").onclick  = async () => {
+  writeHash();
+  try{
+    await navigator.clipboard.writeText(location.href);
+    $("#shareBtn").textContent = t("result.shared");
+    setTimeout(() => { $("#shareBtn").textContent = t("result.share"); }, 1400);
+  }catch(e){ $("#shareBtn").textContent = t("result.copyFail"); }
+};
+
+/* ============ 부팅 ============ */
+function refreshSaved(){
+  const saved = loadCal();
+  const b = $("#goSaved");
+  b.hidden = !(saved && saved.pxPerMm > 0);
+  if(!b.hidden) b.textContent = t("intro.saved", { n:st.pxPerMm.toFixed(2) });
+}
+
+(function init(){
+  applyI18n();
+  const saved = loadCal();
+  if(saved && saved.pxPerMm > 0){
+    st.ref = REFS[saved.ref] ? saved.ref : "card";
+    st.pxPerMm = saved.pxPerMm;
+    st.widthPx = REFS[st.ref].w * st.pxPerMm;
+    checkDrift();
+  }else{
+    st.pxPerMm = guessPxPerMm();
+    st.widthPx = REFS[st.ref].w * st.pxPerMm;
+  }
+  refreshSaved();
+
+  const sw = $("#smallWarn");
+  sw.hidden = !screenTooSmall();
+  if(!sw.hidden) sw.innerHTML = t("intro.small");
+
+  if(readHash()){ show("#s-result"); renderResult(); }   // 공유 링크로 들어온 경우
+  else show("#s-intro");
+})();
+</script>
+</body>
+</html>
