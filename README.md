@@ -180,6 +180,32 @@ are told that plainly and offered direct numeric entry instead of a degraded flo
 </details>
 
 <details>
+<summary><b>The visual system is Apple.com, applied as tokens</b></summary>
+<br>
+
+The interface follows a documented analysis of Apple.com (`DESIGN-apple.md`), implemented as
+CSS custom properties rather than eyeballed: Action Blue #0066cc as the *only* interactive
+color, body copy at 17px/1.47/-0.374px, the 300/400/600/700 weight ladder with 500
+deliberately absent, full-pill CTAs, and edge-to-edge tiles where the surface color change
+is itself the divider.
+
+Two consequences worth naming:
+
+**The measurement canvas went white.** A blue outline on paper-white reads like a technical
+drawing, which is what it is — and it gives maximum contrast against a real hand pressed on
+the glass.
+
+**The handles lost their colors.** They used to be blue/green/amber/purple. The system allows
+exactly one accent, and since the handles already carry text labels (`Wrist`, `Tip`,
+`Width`), the color was redundant anyway. Fine-tune handles sit in muted ink so they recede.
+
+One deliberate departure: the spec assigns #7a7a7a to disabled text and legal fine print.
+Captions here carry real information, so they use #333333 instead — #7a7a7a on white is
+4.29:1, just under the 4.5:1 AA threshold.
+
+</details>
+
+<details>
 <summary><b>Measurements are rotation-invariant, which is what makes auto-fit safe</b></summary>
 <br>
 

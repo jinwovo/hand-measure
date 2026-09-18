@@ -5,315 +5,387 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>손 크기 측정 — 내게 맞는 마우스 찾기</title>
 <meta name="description" content="모니터에 손을 대고 실제 크기 윤곽선에 맞추면 손 길이·너비를 mm로 재고, 그립 방식에 맞는 마우스를 추천합니다. Measure your hand against your monitor and find the mouse that fits.">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Hand Measure — find the mouse that fits you">
 <meta property="og:description" content="Measure your hand against your monitor, then get mouse dimensions that actually fit your grip.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d12'/%3E%3Cpath d='M9 25V14a2 2 0 1 1 4 0V8a2 2 0 1 1 4 0v6a2 2 0 1 1 4 0v-3a2 2 0 1 1 4 0v12a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z' fill='none' stroke='%236d8fff' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
+  /* =====================================================================
+     DESIGN-apple.md 토큰을 그대로 옮긴 것. 값은 전부 문서의 colors/typography/
+     rounded/spacing 에서 온다. 인라인 헥스를 쓰지 않는다는 규칙을 지키려고
+     JS 가 쓰는 색까지 여기서 --tok 으로 내보낸다.
+     ===================================================================== */
   :root{
-    --bg:#0b0d12; --s1:#12161f; --s2:#191e2a; --s3:#212736;
-    --bd:#242b39; --bd2:#333c50;
-    --fg:#eef1f7; --mu:#98a3b8; --ft:#5f6a82;
-    --ac:#6d8fff; --ac2:#9ab4ff; --acd:#16203c;
-    --mint:#3ddc97; --amber:#ffc24b; --rose:#ff6f83;
-    --r:14px; --rs:10px;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    /* colors */
+    --primary:#0066cc; --primary-focus:#0071e3; --primary-on-dark:#2997ff;
+    --ink:#1d1d1f; --ink-80:#333333; --ink-48:#7a7a7a;
+    --on-dark:#ffffff; --body-muted:#cccccc;
+    --divider-soft:#f0f0f0; --hairline:#e0e0e0;
+    --canvas:#ffffff; --parchment:#f5f5f7; --pearl:#fafafc;
+    --tile-1:#272729; --tile-2:#2a2a2c; --tile-3:#252527; --black:#000000;
+    --chip-translucent:rgba(210,210,215,.64);
+    /* rounded */
+    --r-xs:5px; --r-sm:8px; --r-md:11px; --r-lg:18px; --r-pill:9999px;
+    /* spacing */
+    --s-xxs:4px; --s-xs:8px; --s-sm:12px; --s-md:17px; --s-lg:24px;
+    --s-xl:32px; --s-xxl:48px; --s-section:80px;
+    /* the one shadow in the system — product imagery only */
+    --product-shadow:rgba(0,0,0,.22) 3px 5px 30px 0;
+    --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,
+                   "Segoe UI","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    --font-text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,
+                "Segoe UI","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   }
   *{box-sizing:border-box}
-  /* hidden 은 UA 기본값이 display:none 이라, display 를 명시한 요소(.row 등)에서 무력화된다 */
   [hidden]{display:none!important}
   html,body{margin:0;height:100%}
   body{
-    background:var(--bg); color:var(--fg);
-    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",
-         "Apple SD Gothic Neo","Noto Sans KR",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    background:var(--canvas); color:var(--ink);
+    font:400 17px/1.47 var(--font-text); letter-spacing:-.374px;
+    -webkit-font-smoothing:antialiased;
   }
-  ::selection{background:var(--ac);color:#0b0d12}
+  ::selection{background:var(--primary);color:var(--on-dark)}
 
-  /* ---------- type ---------- */
-  .display{font-size:clamp(38px,6vw,54px);line-height:1;font-weight:760;
-           letter-spacing:-2.4px;font-variant-numeric:tabular-nums}
-  h1{font-size:30px;line-height:1.22;margin:0 0 8px;letter-spacing:-.9px;font-weight:720}
-  h2{font-size:19px;margin:0 0 8px;letter-spacing:-.4px;font-weight:700}
-  h3{font-size:12px;margin:0 0 12px;color:var(--ft);letter-spacing:1.1px;
-     font-weight:700;text-transform:uppercase}
-  p{margin:0 0 14px;color:var(--mu)}
-  .lead{font-size:16.5px;color:var(--mu);margin-bottom:26px;max-width:58ch}
-  .sub{font-size:13.5px;color:var(--ft)}
-  b,strong{color:var(--fg);font-weight:650}
-  kbd{font:600 11.5px/1 var(--mono);background:var(--s3);border:1px solid var(--bd2);
-      border-bottom-width:2px;border-radius:5px;padding:3px 6px;color:var(--mu)}
-  a{color:var(--ac2)}
+  /* ---------- typography ladder (300/400/600/700 — no 500) ---------- */
+  .hero{font:600 56px/1.07 var(--font-display);letter-spacing:-.28px;margin:0 0 var(--s-lg)}
+  h1{font:600 40px/1.1 var(--font-display);letter-spacing:0;margin:0 0 var(--s-md)}
+  h2{font:600 34px/1.2 var(--font-text);letter-spacing:-.374px;margin:0 0 var(--s-sm)}
+  h3{font:600 21px/1.19 var(--font-display);letter-spacing:.231px;margin:var(--s-xxl) 0 var(--s-md)}
+  h3:first-child{margin-top:0}
+  .lead{font:400 28px/1.14 var(--font-display);letter-spacing:.196px;
+        color:var(--ink-80);margin:0 0 var(--s-xl);max-width:640px}
+  .lead-airy{font:300 24px/1.5 var(--font-text);letter-spacing:0;color:var(--ink-80)}
+  p{margin:0 0 var(--s-md);color:var(--ink-80)}
+  .caption{font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80)}
+  .caption-strong{font:600 14px/1.29 var(--font-text);letter-spacing:-.224px}
+  .fine{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48)}
+  b,strong{font-weight:600;color:var(--ink)}
+  a{color:var(--primary);text-decoration:none}
+  a:hover{text-decoration:underline}
+  kbd{font:400 12px/1 var(--font-text);letter-spacing:-.12px;background:var(--pearl);
+      border:1px solid var(--hairline);border-radius:var(--r-xs);padding:4px 6px;color:var(--ink-80)}
+  code{font:400 15px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+       background:var(--parchment);border-radius:var(--r-xs);padding:2px 6px;color:var(--ink)}
 
-  /* ---------- layout ---------- */
-  .page{max-width:760px;margin:0 auto;padding:0 24px 110px}
+  /* ---------- tiles: the color change IS the divider ---------- */
   .screen[hidden]{display:none!important}
-  .stack>*+*{margin-top:12px}
+  .tile{padding:var(--s-section) var(--s-lg);background:var(--canvas)}
+  .tile.parchment{background:var(--parchment)}
+  .tile.dark{background:var(--tile-1);color:var(--on-dark)}
+  .tile.dark h1,.tile.dark h2,.tile.dark h3,.tile.dark b{color:var(--on-dark)}
+  .tile.dark p,.tile.dark .lead{color:var(--body-muted)}
+  .tile.dark a{color:var(--primary-on-dark)}
+  .wrap{max-width:980px;margin:0 auto}
+  .wrap.wide{max-width:1440px}
+  .stack>*+*{margin-top:var(--s-md)}
 
-  /* ---------- stepper ---------- */
-  #stepper{position:sticky;top:0;z-index:40;background:#0b0d12e8;backdrop-filter:blur(10px);
-           border-bottom:1px solid var(--bd);margin-bottom:38px}
-  #stepper .in{max-width:760px;margin:0 auto;padding:16px 24px;display:flex;gap:6px;align-items:center}
-  .stp{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-  .stp i{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--s3);
-         color:var(--ft);font:700 11px/22px var(--mono);text-align:center;font-style:normal;
-         transition:.2s}
-  .stp span{font-size:12.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .stp.on i{background:var(--ac);color:#0b0d12}
-  .stp.on span{color:var(--fg);font-weight:650}
-  .stp.done i{background:var(--mint);color:#06281b}
-  .stp.done span{color:var(--mu)}
-  .stp em{flex:1;height:1px;background:var(--bd);margin:0 2px;font-style:normal}
-  @media(max-width:720px){ .stp span{display:none} }
+  /* ---------- global nav + sub nav ---------- */
+  #topnav{position:sticky;top:0;z-index:60;background:var(--black);height:44px;
+          display:flex;align-items:center;padding:0 var(--s-lg);gap:var(--s-lg)}
+  #topnav .brand{font:600 14px/1 var(--font-text);letter-spacing:-.224px;color:var(--on-dark)}
+  #topnav .spacer{flex:1}
+  #topnav button{font:400 12px/1 var(--font-text);letter-spacing:-.12px;background:transparent;
+                 border:0;color:var(--on-dark);padding:8px 10px;cursor:pointer;border-radius:var(--r-sm)}
+  #topnav button:hover{background:rgba(255,255,255,.12)}
+  #stepper{position:sticky;top:44px;z-index:55;height:52px;display:flex;align-items:center;
+           background:rgba(245,245,247,.8);backdrop-filter:saturate(180%) blur(20px);
+           border-bottom:1px solid rgba(0,0,0,.08);padding:0 var(--s-lg)}
+  #stepper .in{max-width:980px;margin:0 auto;width:100%;display:flex;align-items:center;gap:var(--s-xs)}
+  .stp{display:flex;align-items:center;gap:var(--s-xs);flex:0 0 auto}
+  .stp i{width:22px;height:22px;border-radius:var(--r-pill);background:var(--hairline);
+         color:var(--ink-48);font:600 12px/22px var(--font-text);text-align:center;font-style:normal}
+  .stp span{font:400 14px/1.29 var(--font-text);letter-spacing:-.224px;color:var(--ink-80)}
+  .stp.on i{background:var(--primary);color:var(--on-dark)}
+  .stp.on span{color:var(--ink);font-weight:600}
+  .stp.done i{background:var(--ink);color:var(--on-dark)}
+  .stp.done span{color:var(--ink-80)}
+  .stp em{flex:1;height:1px;background:var(--hairline);margin:0 var(--s-xs);min-width:12px}
+  @media(max-width:833px){ .stp span{display:none} .stp em{min-width:6px} }
 
-  /* ---------- surfaces ---------- */
-  .panel{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:22px}
-  .panel.tight{padding:16px 18px}
-  .panel+.panel{margin-top:12px}
-  .hr{height:1px;background:var(--bd);margin:22px 0}
-
-  /* ---------- buttons ---------- */
-  button{font:inherit;font-weight:620;cursor:pointer;border-radius:var(--rs);
-         border:1px solid var(--bd2);background:var(--s2);color:var(--fg);
-         padding:11px 18px;transition:.13s;letter-spacing:-.1px}
-  button:hover:not(:disabled){border-color:var(--bd2);background:var(--s3)}
-  button:active:not(:disabled){transform:translateY(1px)}
-  button:disabled{opacity:.34;cursor:not-allowed}
-  .btn-pri{background:var(--ac);border-color:var(--ac);color:#08101f;font-weight:700}
-  .btn-pri:hover:not(:disabled){background:var(--ac2);border-color:var(--ac2)}
-  .btn-ghost{background:transparent;border-color:transparent;color:var(--mu)}
-  .btn-ghost:hover:not(:disabled){background:var(--s2);color:var(--fg)}
-  .btn-sm{padding:7px 13px;font-size:13px;border-radius:8px}
-  .btn-lg{padding:14px 26px;font-size:16px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  /* ---------- buttons: two grammars only, pill + utility rect ---------- */
+  button{font:400 17px/1.47 var(--font-text);letter-spacing:-.374px;cursor:pointer;
+         border:0;background:transparent;color:var(--ink);transition:background .15s,color .15s}
+  button:active:not(:disabled){transform:scale(.95)}
+  button:disabled{color:var(--ink-48);cursor:not-allowed}
+  button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,
+  summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--primary-focus);outline-offset:2px}
+  .btn-primary{background:var(--primary);color:var(--on-primary,#fff);border-radius:var(--r-pill);
+               padding:11px 22px}
+  .btn-primary:hover{background:var(--primary-focus)}
+  .btn-hero{background:var(--primary);color:#fff;border-radius:var(--r-pill);
+            font:300 18px/1 var(--font-text);letter-spacing:0;padding:14px 28px}
+  .btn-hero:hover{background:var(--primary-focus)}
+  .btn-ghost-pill{background:transparent;color:var(--primary);border:1px solid var(--primary);
+                  border-radius:var(--r-pill);padding:11px 22px}
+  .btn-ghost-pill:hover{background:var(--primary);color:#fff}
+  .btn-link{color:var(--primary);padding:0}
+  .btn-link:hover{text-decoration:underline}
+  .btn-dark{background:var(--ink);color:var(--on-dark);border-radius:var(--r-sm);
+            font:400 14px/1.29 var(--font-text);letter-spacing:-.224px;padding:8px 15px}
+  .btn-pearl{background:var(--pearl);color:var(--ink-80);border:3px solid var(--divider-soft);
+             border-radius:var(--r-md);font:400 14px/1.29 var(--font-text);
+             letter-spacing:-.224px;padding:8px 14px}
+  .btn-pearl:hover{border-color:var(--hairline)}
+  .tile.dark .btn-pearl{background:transparent;border-color:rgba(255,255,255,.22);color:var(--on-dark)}
+  .row{display:flex;gap:var(--s-sm);flex-wrap:wrap;align-items:center}
   .row.end{justify-content:flex-end}
   .spacer{flex:1}
-  .nav{display:flex;gap:10px;align-items:center;margin-top:28px}
+  .nav{display:flex;gap:var(--s-sm);align-items:center;margin-top:var(--s-xxl)}
 
-  /* ---------- segmented control ---------- */
-  .seg{display:inline-flex;background:var(--s2);border:1px solid var(--bd);
-       border-radius:11px;padding:3px;gap:3px;flex-wrap:wrap}
-  .seg button{background:transparent;border:0;padding:7px 14px;border-radius:8px;
-              font-size:13.5px;font-weight:600;color:var(--mu)}
-  .seg button:hover{background:var(--s3);color:var(--fg)}
-  .seg button.on{background:var(--ac);color:#08101f;font-weight:700}
-  .seg button.on:hover{background:var(--ac2)}
-  .qrow{padding:6px 0 14px}
-  .qrow p{margin:0 0 9px;font-size:14px;color:var(--mu)}
-  .qans{display:flex;gap:8px;flex-wrap:wrap}
-  .qans button{font-size:13.5px;padding:9px 16px}
-  .qdone{background:var(--acd);border:1px solid #2c3c6b;border-radius:var(--rs);
-         padding:13px 15px;font-size:14px;color:#c3d1f5}
-  .qdone b{color:var(--ac2)}
-  .searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  .searchrow input{flex:1;min-width:190px;max-width:340px}
-  input[type=search]{font:inherit;background:var(--bg);border:1px solid var(--bd2);
-       border-radius:9px;color:var(--fg);padding:10px 13px}
-  input[type=search]:focus{outline:none;border-color:var(--ac)}
-  .fld{display:grid;grid-template-columns:60px 1fr;gap:14px;align-items:center;padding:7px 0}
-  .fld>label{font-size:13px;color:var(--ft);font-weight:600}
+  /* ---------- configurator chips (pill) ---------- */
+  .seg{display:inline-flex;gap:var(--s-xs);flex-wrap:wrap}
+  .seg button{background:var(--canvas);color:var(--ink);border:1px solid var(--hairline);
+              border-radius:var(--r-pill);padding:12px 16px;
+              font:400 14px/1.29 var(--font-text);letter-spacing:-.224px}
+  .seg button:hover{border-color:var(--ink-48)}
+  .seg button.on{border:2px solid var(--primary-focus);padding:11px 15px;font-weight:600}
+  .fld{display:grid;grid-template-columns:96px 1fr;gap:var(--s-md);align-items:center;
+       padding:var(--s-xs) 0}
+  .fld>label{font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80)}
+
+  /* ---------- cards (hairline, radius lg, no shadow) ---------- */
+  .card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-lg);
+        padding:var(--s-lg)}
+  .card+.card{margin-top:var(--s-sm)}
+  .tile.parchment .card{background:var(--canvas)}
+  .tile.dark .card{background:var(--tile-2);border-color:rgba(255,255,255,.12)}
 
   /* ---------- disclosure ---------- */
-  details.disc{border:1px solid var(--bd);border-radius:var(--rs);background:var(--s1);
-               margin-top:12px;overflow:hidden}
-  details.disc>summary{cursor:pointer;padding:12px 16px;font-size:13.5px;color:var(--mu);
-                       font-weight:620;list-style:none;display:flex;align-items:center;gap:8px}
+  details.disc{border-top:1px solid var(--hairline);margin:0}
+  details.disc+details.disc{border-top:1px solid var(--hairline)}
+  details.disc:last-of-type{border-bottom:1px solid var(--hairline)}
+  details.disc>summary{cursor:pointer;padding:var(--s-md) 0;list-style:none;
+       font:400 17px/1.47 var(--font-text);letter-spacing:-.374px;color:var(--primary);
+       display:flex;align-items:center;gap:var(--s-xs)}
   details.disc>summary::-webkit-details-marker{display:none}
-  details.disc>summary::before{content:"›";font-size:17px;color:var(--ft);transition:.15s;
-                               display:inline-block;line-height:1}
-  details.disc[open]>summary::before{transform:rotate(90deg)}
-  details.disc>summary:hover{color:var(--fg);background:var(--s2)}
-  details.disc .body{padding:4px 16px 16px;font-size:13.5px;color:var(--mu)}
+  details.disc>summary::after{content:"+";margin-left:auto;font-size:21px;font-weight:400;
+       color:var(--primary);line-height:1}
+  details.disc[open]>summary::after{content:"−"}
+  details.disc .body{padding:0 0 var(--s-lg);color:var(--ink-80)}
   details.disc .body p:last-child{margin-bottom:0}
+  .tile.dark details.disc{border-color:rgba(255,255,255,.14)}
+  .tile.dark details.disc>summary{color:var(--primary-on-dark)}
+  .tile.dark details.disc>summary::after{color:var(--primary-on-dark)}
+  .tile.dark details.disc .body{color:var(--body-muted)}
 
-  /* ---------- callout ---------- */
-  .note{font-size:13.5px;color:var(--mu);padding:12px 15px;border-radius:var(--rs);
-        background:var(--s2);border:1px solid var(--bd);margin:14px 0}
-  .note.warn{background:#2a200c;border-color:#5c4718;color:#f0d9a6}
-  .note.warn b{color:var(--amber)}
-  .note.info{background:var(--acd);border-color:#2c3c6b;color:#c3d1f5}
-  .note b{color:var(--fg)}
+  /* ---------- notes: no tinted boxes, parchment + hairline only ---------- */
+  .note{background:var(--parchment);border-radius:var(--r-lg);padding:var(--s-md) var(--s-lg);
+        font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80);
+        margin:var(--s-md) 0}
+  .note.warn{background:var(--canvas);border:1px solid var(--hairline)}
+  /* 양피지 타일 위에서는 양피지 노트가 안 보인다 — 흰 면으로 올린다 */
+  .tile.parchment .note{background:var(--canvas)}
+  .note b{color:var(--ink)}
+  .tile.dark .note{background:var(--tile-2);color:var(--body-muted)}
+  .tile.dark .note b{color:var(--on-dark)}
 
   /* ---------- checklist ---------- */
   ul.checks{list-style:none;margin:0;padding:0}
-  ul.checks li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:13.5px;
-               color:var(--ft);border-bottom:1px solid var(--bd)}
+  .tile.dark ul.checks li{border-color:rgba(255,255,255,.14);color:var(--body-muted)}
+  .tile.dark ul.checks li i{border-color:rgba(255,255,255,.3);color:var(--body-muted)}
+  .tile.dark ul.checks li b{color:var(--on-dark)}
+  ul.checks li{display:flex;gap:var(--s-sm);align-items:flex-start;padding:var(--s-sm) 0;
+       border-bottom:1px solid var(--divider-soft);color:var(--ink-80);
+       font:400 17px/1.47 var(--font-text);letter-spacing:-.374px}
   ul.checks li:last-child{border-bottom:0}
-  ul.checks li i{width:18px;height:18px;flex:0 0 18px;border-radius:50%;border:1.5px solid var(--bd2);
-                 font-style:normal;font-size:10px;line-height:15px;text-align:center;margin-top:2px;
-                 transition:.15s}
-  ul.checks li.ok{color:var(--mu)}
-  ul.checks li.ok i{background:var(--mint);border-color:var(--mint);color:#06281b;font-weight:800}
-  ul.checks li b{font-weight:650}
+  ul.checks li i{width:22px;height:22px;flex:0 0 22px;border-radius:var(--r-pill);
+       border:1px solid var(--hairline);font-style:normal;font:600 12px/20px var(--font-text);
+       text-align:center;color:var(--ink-48);margin-top:3px}
+  ul.checks li.ok i{background:var(--primary);border-color:var(--primary);color:var(--on-dark)}
+  ul.tight{margin:0;padding-left:var(--s-lg);color:var(--ink-80)}
+  ul.tight li{margin-bottom:var(--s-sm)}
+  ol.steps{margin:0;padding-left:var(--s-lg);color:var(--ink-80)}
+  ol.steps li{margin-bottom:var(--s-sm)}
 
   /* ---------- calibration ---------- */
-  .refbar{margin-bottom:20px}
-  .bleed{width:100%}
-  #calStage{position:relative;min-height:250px;padding:38px 0 18px;overflow:hidden}
-  #calGuide{position:absolute;top:8px;bottom:8px;width:2px;background:var(--ac);
-            box-shadow:0 0 12px #6d8fffaa;pointer-events:none}
-  #calGuide::before,#calGuide::after{content:"";position:absolute;left:-7px;width:16px;height:3px;
-            background:var(--ac);border-radius:2px}
+  /* 큰 기준물(A4 210mm)이 타일 패딩에 막히면 안 되므로 좌우로 빠져나간다 */
+  .bleed{margin-left:calc(var(--s-lg) * -1);margin-right:calc(var(--s-lg) * -1)}
+  #calStage{position:relative;min-height:260px;padding:var(--s-xxl) 0 var(--s-lg);overflow:hidden;
+            background:var(--parchment)}
+  #calGuide{position:absolute;top:var(--s-sm);bottom:var(--s-sm);width:2px;background:var(--primary);
+            pointer-events:none}
+  #calGuide::before,#calGuide::after{content:"";position:absolute;left:-7px;width:16px;height:2px;
+            background:var(--primary)}
   #calGuide::before{top:0} #calGuide::after{bottom:0}
-  #calGuideLab{position:absolute;top:10px;font-size:11px;font-weight:700;color:var(--ac2);
-               white-space:nowrap;pointer-events:none;letter-spacing:.2px}
-  #calShape{position:relative;background:linear-gradient(145deg,#fdfdff,#e4e8f0);border-radius:6px;
-            box-shadow:0 0 0 1px #ffffff40,0 18px 44px #00000088}
-  #calShape.circ{border-radius:50%}
-  #calShape.line{background:none;box-shadow:none;height:0!important;border-top:3px solid #eef1f7}
-  #calShape.line::before,#calShape.line::after{content:"";position:absolute;top:-18px;width:3px;
-            height:36px;background:#eef1f7;border-radius:2px}
+  #calGuideLab{position:absolute;top:var(--s-sm);font:600 14px/1.29 var(--font-text);
+            letter-spacing:-.224px;color:var(--primary);white-space:nowrap;pointer-events:none}
+  #calShape{position:relative;background:var(--canvas);border-radius:var(--r-xs);
+            box-shadow:var(--product-shadow)}
+  #calShape.circ{border-radius:var(--r-pill)}
+  #calShape.line{background:none;box-shadow:none;height:0!important;border-top:2px solid var(--ink)}
+  #calShape.line::before,#calShape.line::after{content:"";position:absolute;top:-18px;width:2px;
+            height:36px;background:var(--ink)}
   #calShape.line::before{left:0} #calShape.line::after{right:0}
-  #calGrip{position:absolute;top:50%;right:-17px;width:34px;height:72px;transform:translateY(-50%);
-           background:var(--ac);border-radius:9px;cursor:ew-resize;touch-action:none;
-           box-shadow:0 6px 20px #000a,0 0 0 4px #6d8fff2e;display:grid;place-items:center}
-  #calGrip:focus{outline:none;box-shadow:0 6px 20px #000a,0 0 0 6px #6d8fff55}
-  #calGrip::after{content:"⇤⇥";color:#08101f;font-size:13px;font-weight:800;letter-spacing:-2px}
-  .calbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px}
-  .vbar{background:linear-gradient(145deg,#fdfdff,#e4e8f0);height:20px;border-radius:4px;
-        box-shadow:0 0 0 1px #ffffff30}
-  .vlab{font-size:12px;color:var(--ft);margin:6px 0 16px;font-variant-numeric:tabular-nums}
-  .kv{display:flex;gap:28px;flex-wrap:wrap}
-  .kv>div{min-width:84px}
-  .kv .k{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
-  .kv .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;
-         font-family:var(--mono)}
+  #calGrip{position:absolute;top:50%;right:-22px;width:44px;height:44px;transform:translateY(-50%);
+           background:var(--primary);border-radius:var(--r-pill);cursor:ew-resize;touch-action:none;
+           display:grid;place-items:center;color:#fff;font:600 15px/1 var(--font-text)}
+  #calGrip:active{transform:translateY(-50%) scale(.95)}
+  .vbar{background:var(--canvas);height:22px;border-radius:var(--r-xs);
+        box-shadow:var(--product-shadow)}
+  .vlab{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48);
+        margin:var(--s-xs) 0 var(--s-md)}
+  .kv{display:flex;gap:var(--s-xl);flex-wrap:wrap}
+  .kv .k{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48)}
+  .kv .v{font:600 21px/1.19 var(--font-display);letter-spacing:.231px;margin-top:2px;
+         font-variant-numeric:tabular-nums}
 
-  /* ---------- measure (fullscreen canvas) ---------- */
-  #s-measure{position:fixed;inset:0;z-index:60;background:var(--bg);
+  /* ---------- measure: white canvas, the outline is the product ---------- */
+  #s-measure{position:fixed;inset:0;z-index:70;background:var(--canvas);
              touch-action:none;user-select:none;-webkit-user-select:none}
   #stage{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
-  #stage:focus-visible{outline:2px solid var(--ac);outline-offset:-3px}
   #stage.grabbing{cursor:grabbing}
-  #mbar{position:absolute;inset:0 0 auto 0;height:62px;z-index:3;background:#0b0d12e6;
-        border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px;
-        padding:0 18px;backdrop-filter:blur(10px)}
-  #mbar .ttl{font-size:15px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
-  #mbar .hint{font-size:12.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #mpanel{position:absolute;top:62px;right:0;bottom:0;width:300px;z-index:3;background:#0b0d12f2;
-          border-left:1px solid var(--bd);padding:20px 18px;overflow:auto;backdrop-filter:blur(10px);
-          display:flex;flex-direction:column;gap:16px}
-  .readout{display:flex;flex-direction:column;gap:2px}
-  .readout .lbl{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
-  .readout .num{font-size:34px;font-weight:750;letter-spacing:-1.6px;font-variant-numeric:tabular-nums;
-                line-height:1.05}
-  .readout .num small{font-size:14px;color:var(--ft);font-weight:600;letter-spacing:0;margin-left:3px}
-  .readout.mini .num{font-size:20px;letter-spacing:-.7px}
-  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  #stage:focus-visible{outline:2px solid var(--primary-focus);outline-offset:-3px}
+  #mbar{position:absolute;inset:0 0 auto 0;height:52px;z-index:3;
+        background:rgba(245,245,247,.8);backdrop-filter:saturate(180%) blur(20px);
+        border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;
+        gap:var(--s-md);padding:0 var(--s-lg)}
+  #mbar .ttl{font:600 21px/1.19 var(--font-display);letter-spacing:.231px;white-space:nowrap}
+  #mbar .hint{font:400 14px/1.29 var(--font-text);letter-spacing:-.224px;color:var(--ink-48);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #mpanel{position:absolute;top:52px;right:0;bottom:0;width:320px;z-index:3;
+        background:var(--parchment);border-left:1px solid var(--hairline);
+        padding:var(--s-lg);overflow:auto;display:flex;flex-direction:column;gap:var(--s-md)}
+  .readout .lbl{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48)}
+  .readout .num{font:600 40px/1.1 var(--font-display);letter-spacing:0;
+        font-variant-numeric:tabular-nums}
+  .readout .num small{font:400 17px/1 var(--font-text);letter-spacing:-.374px;color:var(--ink-48);
+        margin-left:3px}
+  .readout.mini .num{font-size:28px;letter-spacing:.196px}
 
   /* ---------- grip ---------- */
-  .grips{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-  .gripcard{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;
-            cursor:pointer;text-align:left;font:inherit;color:inherit;display:block;width:100%}
-  .gripcard:hover{border-color:var(--bd2);background:var(--s1)}
-  .gripcard.on{border-color:var(--ac);background:var(--acd)}
-  .gripcard svg{width:100%;height:auto;display:block;background:#0b0d12;border-radius:9px;
-                margin-bottom:12px;border:1px solid var(--bd)}
-  .gripcard .gn{font-size:16px;font-weight:720;letter-spacing:-.3px}
-  .gripcard.on .gn{color:var(--ac2)}
-  .gripcard .gd{font-size:12.5px;color:var(--ft);margin-top:5px;line-height:1.55}
+  .grips{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--s-lg)}
+  .gripcard{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-lg);
+        padding:var(--s-lg);cursor:pointer;text-align:left;width:100%;display:block;color:inherit}
+  .gripcard:hover{border-color:var(--ink-48)}
+  .gripcard.on{border:2px solid var(--primary-focus);padding:calc(var(--s-lg) - 1px)}
+  .gripcard svg{width:100%;height:auto;display:block;background:var(--parchment);
+        border-radius:var(--r-sm);margin-bottom:var(--s-md)}
+  .gripcard .gn{font:600 17px/1.24 var(--font-text);letter-spacing:-.374px}
+  .gripcard.on .gn{color:var(--primary)}
+  .gripcard .gd{font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80);
+        margin-top:var(--s-xs)}
+  .qrow{padding:0 0 var(--s-lg)}
+  .qrow p{margin:0 0 var(--s-sm);color:var(--ink)}
+  .qans{display:flex;gap:var(--s-sm);flex-wrap:wrap}
+  .qdone{background:var(--parchment);border-radius:var(--r-lg);padding:var(--s-md) var(--s-lg);
+        color:var(--ink-80)}
+  .qdone b{color:var(--primary)}
 
-  /* ---------- result / distribution ---------- */
-  .statrow{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-end}
-  .statrow .unit{font-size:17px;color:var(--ft);font-weight:600;letter-spacing:0}
-  .dist{position:relative;height:56px;margin:22px 0 4px}
-  .dist .track{position:absolute;left:0;right:0;top:26px;height:6px;border-radius:3px;
-               background:linear-gradient(90deg,#1e2433,#2f3950,#1e2433)}
-  .dist .tick{position:absolute;top:18px;width:2px;height:22px;background:var(--bd2);border-radius:1px}
-  .dist .tlab{position:absolute;top:44px;font-size:11px;color:var(--ft);transform:translateX(-50%);
-              white-space:nowrap}
-  .dist .you{position:absolute;top:10px;width:3px;height:38px;background:var(--mint);border-radius:2px;
-             box-shadow:0 0 14px #3ddc9799}
-  .dist .youlab{position:absolute;top:-8px;font-size:12px;font-weight:750;color:var(--mint);
-                transform:translateX(-50%);white-space:nowrap}
+  /* ---------- result ---------- */
+  .statrow{display:flex;gap:var(--s-section);flex-wrap:wrap;align-items:flex-end}
+  .display{font:600 56px/1.07 var(--font-display);letter-spacing:-.28px;
+        font-variant-numeric:tabular-nums}
+  .display.sm{font-size:40px;line-height:1.1;letter-spacing:0}
+  .display .unit{font:400 21px/1 var(--font-display);letter-spacing:.231px;color:var(--ink-48)}
+  .dist{position:relative;height:64px;margin:var(--s-xl) 0 var(--s-xs)}
+  .dist .track{position:absolute;left:0;right:0;top:30px;height:2px;background:var(--hairline)}
+  .dist .tick{position:absolute;top:24px;width:1px;height:14px;background:var(--ink-48)}
+  .dist .tlab{position:absolute;top:44px;font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;
+        color:var(--ink-48);transform:translateX(-50%);white-space:nowrap}
+  .dist .you{position:absolute;top:22px;width:2px;height:18px;background:var(--primary)}
+  .dist .youlab{position:absolute;top:0;font:600 14px/1.29 var(--font-text);letter-spacing:-.224px;
+        color:var(--primary);transform:translateX(-50%);white-space:nowrap}
 
   /* ---------- recommendation ---------- */
-  .rng{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px;margin-top:14px}
-  .rng>div{background:var(--s2);border-radius:var(--rs);padding:13px 15px}
-  .rng .k{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;font-weight:700}
-  .rng .v{font-size:19px;font-weight:720;font-variant-numeric:tabular-nums;margin-top:3px}
-  .rng .v small{font-size:12px;color:var(--ft);font-weight:600}
-  .mrow{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;
-        margin-bottom:8px;position:relative;overflow:hidden}
-  .mrow.top{border-color:#2c5f49}
-  .mrow .fill{position:absolute;inset:0 auto 0 0;background:#6d8fff12;pointer-events:none}
-  .mrow.top .fill{background:#3ddc9714}
-  .mrow>*{position:relative}
-  .mhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
-  .mhead .bd{font-size:11.5px;color:var(--ft);font-weight:700;letter-spacing:.3px}
-  .mhead .nm{font-size:15.5px;font-weight:720;letter-spacing:-.3px}
-  .mhead .pc{margin-left:auto;font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;
-             color:var(--ac2);font-family:var(--mono)}
-  .mrow.top .mhead .pc{color:var(--mint)}
-  .mspec{font-size:12.5px;color:var(--mu);margin-top:5px;font-variant-numeric:tabular-nums}
-  .mwhy{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-  .chip{font-size:11.5px;padding:3px 9px;border-radius:99px;background:var(--s3);color:var(--ft);
-        font-weight:600}
-  .chip.ok{background:#12352a;color:#6fe0ac}
-  .chip.bad{background:#352a11;color:var(--amber)}
-  .empty{border:1px dashed var(--bd2);border-radius:var(--r);padding:34px;text-align:center;color:var(--ft)}
+  .rng{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--s-sm);
+       margin-top:var(--s-md)}
+  .rng>div{background:var(--parchment);border-radius:var(--r-lg);padding:var(--s-md) var(--s-lg)}
+  .rng .k{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48)}
+  .rng .v{font:600 28px/1.14 var(--font-display);letter-spacing:.196px;margin-top:2px;
+       font-variant-numeric:tabular-nums}
+  .rng .v small{font:400 14px/1 var(--font-text);color:var(--ink-48)}
+  .mrow{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-lg);
+        padding:var(--s-md) var(--s-lg);margin-bottom:var(--s-sm);cursor:pointer;
+        transition:border-color .15s}
+  .mrow:hover{border-color:var(--ink-48)}
+  .mrow.top,.mrow.picked{border:2px solid var(--primary-focus);
+        padding:calc(var(--s-md) - 1px) calc(var(--s-lg) - 1px)}
+  .mrow.yours{border-color:var(--ink)}
+  .mhead{display:flex;align-items:baseline;gap:var(--s-sm);flex-wrap:wrap}
+  .mhead .bd{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48)}
+  .mhead .nm{font:600 17px/1.24 var(--font-text);letter-spacing:-.374px}
+  .mhead .pc{margin-left:auto;font:600 17px/1.24 var(--font-text);letter-spacing:-.374px;
+        color:var(--primary);font-variant-numeric:tabular-nums}
+  .mspec{font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80);
+        margin-top:var(--s-xxs);font-variant-numeric:tabular-nums}
+  .mwhy{display:flex;gap:var(--s-xs);flex-wrap:wrap;margin-top:var(--s-sm)}
+  .chip{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;padding:5px 12px;
+        border-radius:var(--r-pill);background:var(--parchment);color:var(--ink-80)}
+  .chip.ok{background:var(--primary);color:#fff}
+  .chip.bad{background:var(--canvas);border:1px solid var(--hairline);color:var(--ink-80)}
+  .badge{font:600 12px/1.4 var(--font-text);letter-spacing:-.12px;background:var(--ink);
+        color:var(--on-dark);padding:3px 9px;border-radius:var(--r-pill)}
+  .empty{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:var(--s-xxl);
+        text-align:center;color:var(--ink-48)}
+  .searchrow{display:flex;gap:var(--s-sm);align-items:center;flex-wrap:wrap;
+        margin-bottom:var(--s-md)}
+
+  /* ---------- fit preview: the outline is the product, so it gets the shadow ---------- */
+  .fitname{font:400 21px/1.19 var(--font-display);letter-spacing:.231px;color:var(--primary)}
+  .fitgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-md)}
+  @media(max-width:735px){.fitgrid{grid-template-columns:1fr}}
+  .fitgrid figure{margin:0;background:var(--parchment);border-radius:var(--r-lg);
+        padding:var(--s-sm)}
+  .fitgrid figcaption{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;
+        color:var(--ink-48);margin-bottom:var(--s-xs);padding-left:var(--s-xs)}
+  .cmp{display:flex;gap:var(--s-lg);align-items:center;flex-wrap:wrap;margin-top:var(--s-md)}
+  .cmp .big{font:600 56px/1.07 var(--font-display);letter-spacing:-.28px;
+        font-variant-numeric:tabular-nums;color:var(--primary)}
+  .cmp.mid .big,.cmp.bad .big{color:var(--ink)}
+  .cmp .big small{font:400 17px/1 var(--font-text);color:var(--ink-48)}
+  .cmp .txt{flex:1;min-width:260px;color:var(--ink-80)}
+
+  /* ---------- inputs: pill, 44px ---------- */
+  input[type=number],input[type=search],select{
+        font:400 17px/1.47 var(--font-text);letter-spacing:-.374px;background:var(--canvas);
+        border:1px solid rgba(0,0,0,.08);border-radius:var(--r-pill);color:var(--ink);
+        padding:12px 20px;height:44px}
+  input[type=number]{width:140px;font-variant-numeric:tabular-nums}
+  input[type=search]{flex:1;min-width:220px;max-width:380px}
+  select{width:100%;max-width:440px;cursor:pointer}
+  label{color:var(--ink-80)}
+  #diag{margin-top:var(--s-md);color:var(--ink-80)}
+  #diag.ok{color:var(--primary)}
+  pre.json{background:var(--parchment);border-radius:var(--r-lg);padding:var(--s-md);
+        font:400 12px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+        letter-spacing:-.12px;overflow:auto;color:var(--ink-80);margin:0}
 
   /* ---------- overlays ---------- */
-  .banner{position:fixed;inset:0 0 auto 0;z-index:200;background:var(--amber);color:#241a05;
-          padding:11px 18px;font-size:13.5px;font-weight:650;display:flex;gap:12px;align-items:center}
-  .banner[hidden]{display:none!important}
-  .banner button{background:#241a05;border-color:#241a05;color:var(--amber);padding:6px 12px;font-size:12.5px}
-  #help{position:fixed;inset:0;z-index:120;background:#05070ceb;display:grid;place-items:center;
-        padding:24px;backdrop-filter:blur(4px)}
-  #help[hidden]{display:none!important}
-  .helpbox{background:var(--s1);border:1px solid var(--bd);border-radius:18px;max-width:860px;
-           width:100%;max-height:88vh;overflow:auto;padding:28px}
-  .hgrid{display:grid;grid-template-columns:230px 1fr;gap:28px;align-items:start}
-  @media(max-width:720px){.hgrid{grid-template-columns:1fr}}
-  .fig{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px;text-align:center}
+  .banner{position:fixed;inset:0 0 auto 0;z-index:200;background:var(--ink);color:var(--on-dark);
+        padding:var(--s-sm) var(--s-lg);font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;
+        display:flex;gap:var(--s-sm);align-items:center}
+  .banner button{background:var(--on-dark);color:var(--ink);border-radius:var(--r-sm);
+        font:400 14px/1.29 var(--font-text);padding:8px 15px}
+  #help{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.48);display:grid;
+        place-items:center;padding:var(--s-lg);backdrop-filter:blur(4px)}
+  .helpbox{background:var(--canvas);border-radius:var(--r-lg);max-width:980px;width:100%;
+        max-height:88vh;overflow:auto;padding:var(--s-xxl)}
+  .hgrid{display:grid;grid-template-columns:260px 1fr;gap:var(--s-xl);align-items:start}
+  @media(max-width:735px){.hgrid{grid-template-columns:1fr}}
+  .fig{background:var(--parchment);border-radius:var(--r-lg);padding:var(--s-md);text-align:center}
   .fig svg{width:100%;height:auto;display:block}
-  .fig figcaption{font-size:11.5px;color:var(--ft);margin-top:8px}
-  ol.steps{margin:0;padding-left:20px;color:var(--mu)}
-  ol.steps li{margin-bottom:10px}
-  ul.tight{margin:0;padding-left:19px;color:var(--mu)}
-  ul.tight li{margin-bottom:7px}
-  select{font:inherit;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
-          color:var(--fg);padding:11px 13px;width:100%;max-width:430px;cursor:pointer}
-  .cmp{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:16px}
-  .cmp .big{font-size:38px;font-weight:760;letter-spacing:-1.6px;line-height:1;
-            font-variant-numeric:tabular-nums}
-  .cmp .big small{font-size:14px;color:var(--ft);font-weight:600;letter-spacing:0}
-  .cmp.good .big{color:var(--mint)} .cmp.mid .big{color:var(--amber)} .cmp.bad .big{color:var(--rose)}
-  .cmp .txt{flex:1;min-width:230px;font-size:14px;color:var(--mu);line-height:1.6}
-  .cmp .txt b{color:var(--fg)}
-  .mrow{cursor:pointer}
-  .mrow:hover{border-color:var(--bd2)}
-  .mrow.picked{border-color:var(--mint)}
-  .fitname{color:var(--ac2);font-weight:700;text-transform:none;letter-spacing:-.2px;font-size:14px}
-  .fitgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:700px){.fitgrid{grid-template-columns:1fr}}
-  .fitgrid figure{margin:0;background:var(--bg);border:1px solid var(--bd);border-radius:10px;
-                  padding:8px 8px 4px}
-  .fitgrid figcaption{font-size:11px;color:var(--ft);letter-spacing:.9px;text-transform:uppercase;
-                      font-weight:700;margin-bottom:4px;padding-left:4px}
-  .mrow.yours{border-color:var(--ac)}
-  .mrow.yours .fill{background:#6d8fff1c}
-  .badge{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
-         background:var(--ac);color:#08101f;padding:2px 7px;border-radius:5px}
-  button:focus-visible,select:focus-visible,summary:focus-visible,input:focus-visible{
-    outline:2px solid var(--ac);outline-offset:2px}
-  input[type=number]{font:inherit;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
-                     color:var(--fg);padding:10px 13px;width:118px;font-variant-numeric:tabular-nums}
-  input[type=number]:focus{outline:none;border-color:var(--ac)}
-  label{font-size:13.5px;color:var(--mu)}
-  #diag{font-size:13.5px;margin-top:12px}
-  #diag.ok{color:var(--mint)} #diag.warn{color:var(--amber)} #diag.bad{color:var(--rose)}
-  #langBtn{position:fixed;top:14px;right:18px;z-index:80;font-family:var(--mono);font-size:12px;
-           letter-spacing:.4px;padding:6px 12px}
-  pre.json{background:var(--bg);border:1px solid var(--bd);border-radius:9px;padding:13px;
-           font:12px/1.55 var(--mono);overflow:auto;color:var(--mu);margin:0}
+  .fig figcaption{font:400 12px/1.4 var(--font-text);letter-spacing:-.12px;color:var(--ink-48);
+        margin-top:var(--s-xs)}
+
+  /* ---------- responsive: 1068 / 833 / 640 / 419 ---------- */
+  @media(max-width:1068px){ .hero{font-size:40px} .tile{padding:var(--s-xxl) var(--s-lg)} }
+  @media(max-width:833px){ #mpanel{width:280px} .statrow{gap:var(--s-xl)} }
+  @media(max-width:640px){
+    .hero{font-size:34px} h1{font-size:34px} .lead{font-size:21px;line-height:1.3}
+    .display{font-size:40px} .tile{padding:var(--s-xxl) var(--s-md)}
+    #mpanel{width:100%;top:auto;bottom:0;height:46%;border-left:0;border-top:1px solid var(--hairline)}
+  }
+  @media(max-width:419px){ .hero{font-size:28px} h1{font-size:28px} }
 </style>
 </head>
 <body>
 
-<button id="langBtn" class="btn-sm">EN</button>
+<nav id="topnav">
+  <span class="brand">Hand Measure</span>
+  <span class="spacer"></span>
+  <button id="langBtn"></button>
+</nav>
 
 <div id="zoomWarn" class="banner" hidden>
   <span id="zoomMsg"></span><span class="spacer"></span>
@@ -330,25 +402,28 @@
 </div></nav>
 
 <!-- ============== 0. INTRO ============== -->
-<section id="s-intro" class="screen"><div class="page">
-  <h1 data-i18n-html="intro.h1"></h1>
+<section id="s-intro" class="screen"><div class="tile"><div class="wrap">
+  <h1 class="hero" data-i18n-html="intro.h1"></h1>
   <p class="lead" data-i18n-html="intro.lead"></p>
 
   <p id="smallWarn" class="note warn" hidden></p>
 
   <div class="row">
-    <button class="btn-pri btn-lg" id="goCal" data-i18n="intro.start"></button>
-    <button class="btn-lg" id="goSaved" hidden></button>
+    <button class="btn-hero" id="goCal" data-i18n="intro.start"></button>
+    <button class="btn-ghost-pill" id="goSaved" hidden></button>
   </div>
   <p style="margin-top:14px">
-    <button class="btn-ghost btn-sm" id="goManual" data-i18n="intro.manual"></button>
+    <button class="btn-link" id="goManual" data-i18n="intro.manual"></button>
   </p>
 
-  <div class="hr"></div>
+  
 
   <h3 data-i18n="intro.needTitle"></h3>
   <p style="margin-bottom:22px" data-i18n-html="intro.needBody"></p>
 
+</div></div>
+
+<div class="tile dark"><div class="wrap">
   <h3 data-i18n="intro.howTitle"></h3>
   <ul class="checks" style="margin-bottom:8px">
     <li><i>1</i><div data-i18n-html="intro.how1"></div></li>
@@ -356,6 +431,9 @@
     <li><i>3</i><div data-i18n-html="intro.how3"></div></li>
   </ul>
 
+</div></div>
+
+<div class="tile parchment"><div class="wrap">
   <details class="disc">
     <summary data-i18n="intro.beforeSummary"></summary>
     <div class="body">
@@ -367,37 +445,37 @@
       </ul>
     </div>
   </details>
-</div></section>
+</div></div></section>
 
 <!-- ============== 0b. MANUAL ENTRY ============== -->
-<section id="s-manual" class="screen" hidden><div class="page">
+<section id="s-manual" class="screen" hidden><div class="tile parchment"><div class="wrap">
   <h1 data-i18n="manual.h1"></h1>
   <p class="lead" data-i18n="manual.lead"></p>
-  <div class="panel">
+  <div class="card">
     <div class="row" style="gap:22px">
       <label><span data-i18n="manual.len"></span>
         <input type="number" id="mnLen" min="120" max="250" step="0.5" placeholder="191"> mm</label>
       <label><span data-i18n="manual.wid"></span>
         <input type="number" id="mnWid" min="55" max="130" step="0.5" placeholder="88"> mm</label>
     </div>
-    <p class="sub" style="margin:14px 0 0" data-i18n="manual.note"></p>
+    <p class="caption" style="margin:14px 0 0" data-i18n="manual.note"></p>
     <p id="mnErr" class="note warn" hidden></p>
   </div>
   <div class="nav">
-    <button class="btn-ghost" id="mnBack" data-i18n="manual.back"></button>
+    <button class="btn-link" id="mnBack" data-i18n="manual.back"></button>
     <div class="spacer"></div>
-    <button class="btn-pri btn-lg" id="mnGo" data-i18n="manual.go"></button>
+    <button class="btn-hero" id="mnGo" data-i18n="manual.go"></button>
   </div>
-</div></section>
+</div></div></section>
 
 <!-- ============== 1. CALIBRATION ============== -->
-<section id="s-cal" class="screen" hidden><div class="page">
+<section id="s-cal" class="screen" hidden><div class="tile parchment"><div class="wrap">
   <h1 data-i18n="cal.h1"></h1>
   <p class="lead" data-i18n-html="cal.lead"></p>
 
   <div class="refbar">
     <div class="seg" id="refGrid"></div>
-    <p class="sub" id="refHint" style="margin:12px 0 0"></p>
+    <p class="caption" id="refHint" style="margin:12px 0 0"></p>
   </div>
   <div class="note info" style="margin:0 0 4px" data-i18n-html="cal.alignNote"></div>
 </div>
@@ -406,15 +484,15 @@
   <div id="calStage"><div id="calGuide"></div><div id="calGuideLab"></div><div id="calShape"><div id="calGrip" tabindex="0"></div></div></div>
 </div>
 
-<div class="page">
+<div class="wrap">
   <div class="row" id="customRow" hidden style="margin-bottom:16px">
     <label><span data-i18n="cal.customLabel"></span>
       <input type="number" id="customMm" value="100" min="10" max="400" step="0.5"> mm</label>
-    <span class="sub" data-i18n="cal.customNote"></span>
+    <span class="caption" data-i18n="cal.customNote"></span>
   </div>
 
   <div class="calbar">
-    <span class="sub" data-i18n-html="cal.fineHint"></span>
+    <span class="caption" data-i18n-html="cal.fineHint"></span>
   </div>
 
   <p id="maxHint" class="note warn" hidden></p>
@@ -445,11 +523,11 @@
   </details>
 
   <div class="nav">
-    <button class="btn-ghost" id="calBack" data-i18n="cal.back"></button>
+    <button class="btn-link" id="calBack" data-i18n="cal.back"></button>
     <div class="spacer"></div>
-    <button class="btn-pri btn-lg" id="calNext" data-i18n="cal.next"></button>
+    <button class="btn-hero" id="calNext" data-i18n="cal.next"></button>
   </div>
-</div></section>
+</div></div></section>
 
 <!-- ============== 2. MEASURE (fullscreen canvas) ============== -->
 <section id="s-measure" class="screen" hidden>
@@ -466,7 +544,7 @@
       <button id="orDiag">45°</button><button id="orUp">90°</button>
       <button id="orAuto" data-i18n="measure.auto"></button>
     </div>
-    <button class="btn-sm" id="mFull" data-i18n="measure.full"></button>
+    <button class="btn-pearl" id="mFull" data-i18n="measure.full"></button>
   </div>
 
   <div id="mpanel">
@@ -484,31 +562,31 @@
     </div>
 
     <ul class="checks" id="mChecks">
-      <li data-c="wrist"><i>✓</i><div><span class="dot" style="background:#6d8fff"></span><span data-i18n-html="measure.chk1"></span></div></li>
-      <li data-c="tip"><i>✓</i><div><span class="dot" style="background:#3ddc97"></span><span data-i18n-html="measure.chk2"></span></div></li>
-      <li data-c="width"><i>✓</i><div><span class="dot" style="background:#ffc24b"></span><span data-i18n-html="measure.chk3"></span></div></li>
+      <li data-c="wrist"><i>✓</i><div><span data-i18n-html="measure.chk1"></span></div></li>
+      <li data-c="tip"><i>✓</i><div><span data-i18n-html="measure.chk2"></span></div></li>
+      <li data-c="width"><i>✓</i><div><span data-i18n-html="measure.chk3"></span></div></li>
     </ul>
 
     <div class="row" style="gap:7px">
-      <button class="btn-sm" id="mHelp" data-i18n="measure.help"></button>
-      <button class="btn-sm btn-ghost" id="mDetail"></button>
-      <button class="btn-sm btn-ghost" id="mReset" data-i18n="measure.reset"></button>
+      <button class="btn-pearl" id="mHelp" data-i18n="measure.help"></button>
+      <button class="btn-link" id="mDetail"></button>
+      <button class="btn-link" id="mReset" data-i18n="measure.reset"></button>
     </div>
 
-    <p class="sub" style="font-size:11.5px;line-height:1.75;margin:0" data-i18n-html="kbd.hint"></p>
+    <p class="caption" style="font-size:11.5px;line-height:1.75;margin:0" data-i18n-html="kbd.hint"></p>
     <div id="fitWarn" class="note warn" hidden style="font-size:12.5px;padding:11px 13px;margin:0"></div>
 
     <div class="spacer"></div>
-    <button class="btn-pri" id="mDone" style="width:100%" data-i18n="measure.done"></button>
-    <button class="btn-ghost btn-sm" id="mExit" style="width:100%" data-i18n="measure.exit"></button>
+    <button class="btn-primary" id="mDone" style="width:100%" data-i18n="measure.done"></button>
+    <button class="btn-link" id="mExit" style="width:100%" data-i18n="measure.exit"></button>
   </div>
 </section>
 
 <!-- ============== 3. RESULT ============== -->
-<section id="s-result" class="screen" hidden><div class="page">
+<section id="s-result" class="screen" hidden><div class="tile"><div class="wrap">
   <h1 data-i18n="result.h1"></h1>
 
-  <div class="panel">
+  <div class="card">
     <div class="statrow">
       <div>
         <h3 style="margin-bottom:6px" data-i18n="result.len"></h3>
@@ -525,16 +603,16 @@
     </div>
 
     <div class="dist" id="dist"></div>
-    <p class="sub" id="distNote" style="margin:12px 0 0"></p>
-    <p class="sub" data-i18n="result.tolerance" style="margin:6px 0 0;opacity:.75"></p>
+    <p class="caption" id="distNote" style="margin:12px 0 0"></p>
+    <p class="caption" data-i18n="result.tolerance" style="margin:6px 0 0;opacity:.75"></p>
   </div>
 
   <div class="row" style="margin-top:18px">
-    <button class="btn-pri btn-lg" id="goGrip" data-i18n="result.goGrip"></button>
+    <button class="btn-hero" id="goGrip" data-i18n="result.goGrip"></button>
     <button id="rAgain" data-i18n="result.again"></button>
-    <button class="btn-ghost" id="shareBtn" data-i18n="result.share"></button>
+    <button class="btn-link" id="shareBtn" data-i18n="result.share"></button>
   </div>
-  <p class="sub" id="palmEst" style="margin:10px 0 0" hidden></p>
+  <p class="caption" id="palmEst" style="margin:10px 0 0" hidden></p>
 
   <details class="disc">
     <summary data-i18n="result.rulerSummary"></summary>
@@ -543,12 +621,12 @@
       <div class="row">
         <label><span data-i18n="result.truthLabel"></span>
           <input type="number" id="truth" step="0.5" min="100" max="260" placeholder="191"> mm</label>
-        <button class="btn-sm" id="diagBtn" data-i18n="result.compare"></button>
+        <button class="btn-pearl" id="diagBtn" data-i18n="result.compare"></button>
       </div>
       <div id="diag"></div>
       <div id="fixWrap" class="row" style="margin-top:14px" hidden>
-        <button class="btn-sm" id="fixCal" data-i18n="result.fixBtn"></button>
-        <span class="sub" data-i18n="result.fixNote"></span>
+        <button class="btn-pearl" id="fixCal" data-i18n="result.fixBtn"></button>
+        <span class="caption" data-i18n="result.fixNote"></span>
       </div>
     </div>
   </details>
@@ -558,15 +636,15 @@
     <div class="body">
       <pre class="json" id="rJson"></pre>
       <div class="row" style="margin-top:12px">
-        <button class="btn-sm" id="copyJson" data-i18n="result.copy"></button>
-        <button class="btn-sm btn-ghost" id="rRecal" data-i18n="result.recal"></button>
+        <button class="btn-pearl" id="copyJson" data-i18n="result.copy"></button>
+        <button class="btn-link" id="rRecal" data-i18n="result.recal"></button>
       </div>
     </div>
   </details>
-</div></section>
+</div></div></section>
 
 <!-- ============== 4. GRIP ============== -->
-<section id="s-grip" class="screen" hidden><div class="page">
+<section id="s-grip" class="screen" hidden><div class="tile parchment"><div class="wrap">
   <h1 data-i18n="grip.h1"></h1>
   <p class="lead" data-i18n-html="grip.lead"></p>
 
@@ -583,24 +661,24 @@
   </details>
 
   <div class="nav">
-    <button class="btn-ghost" id="gBack" data-i18n="grip.back"></button>
+    <button class="btn-link" id="gBack" data-i18n="grip.back"></button>
     <div class="spacer"></div>
-    <button class="btn-pri btn-lg" id="gNext" data-i18n="grip.next"></button>
+    <button class="btn-hero" id="gNext" data-i18n="grip.next"></button>
   </div>
-</div></section>
+</div></div></section>
 
 <!-- ============== 5. RECOMMENDATION ============== -->
-<section id="s-rec" class="screen" hidden><div class="page">
+<section id="s-rec" class="screen" hidden><div class="tile"><div class="wrap">
   <h1 data-i18n="rec.h1"></h1>
-  <div class="panel" id="recRange"></div>
+  <div class="card" id="recRange"></div>
 
-  <div class="panel" style="margin-top:12px">
+  <div class="card" style="margin-top:12px">
     <h3 data-i18n="cur.title"></h3>
     <select id="curPick" aria-label="current mouse"></select>
     <div id="curOut"></div>
   </div>
 
-  <div class="panel" id="fitPanel" style="margin-top:12px" hidden>
+  <div class="card" id="fitPanel" style="margin-top:12px" hidden>
     <h3><span data-i18n="fit.title"></span> <span id="fitName" class="fitname"></span></h3>
     <div id="fitBox"></div>
   </div>
@@ -608,7 +686,7 @@
   <h3 style="margin:28px 0 12px" data-i18n="rec.listTitle"></h3>
   <div class="searchrow">
     <input type="search" id="recSearch" aria-label="search mice">
-    <button class="btn-sm btn-ghost" id="recMore"></button>
+    <button class="btn-link" id="recMore"></button>
   </div>
   <div id="recList"></div>
 
@@ -621,11 +699,11 @@
   </details>
 
   <div class="nav">
-    <button class="btn-ghost" id="recBack" data-i18n="rec.back"></button>
+    <button class="btn-link" id="recBack" data-i18n="rec.back"></button>
     <div class="spacer"></div>
     <button id="recRemeasure" data-i18n="rec.remeasure"></button>
   </div>
-</div></section>
+</div></div></section>
 
 <!-- ============== HELP OVERLAY ============== -->
 <div id="help" hidden><div class="helpbox">
@@ -654,7 +732,7 @@
   </div>
 
   <div class="row end" style="margin-top:24px">
-    <button class="btn-pri" id="helpClose" data-i18n="help.close"></button>
+    <button class="btn-primary" id="helpClose" data-i18n="help.close"></button>
   </div>
 </div></div>
 
@@ -662,6 +740,15 @@
 <script src="mice.js"></script>
 <script>
 "use strict";
+/* DESIGN-apple.md: 인터랙티브 신호는 Action Blue 하나뿐. SVG 로 그리는 것들도
+   같은 토큰을 쓰도록 여기서 한 번만 정의한다. 랜드마크는 색이 아니라 글자 라벨로 구분한다. */
+const C = {
+  primary:"#0066cc", focus:"#0071e3", onDark:"#2997ff",
+  ink:"#1d1d1f", ink80:"#333333", ink48:"#7a7a7a",
+  hairline:"#e0e0e0", divider:"#f0f0f0",
+  canvas:"#ffffff", parchment:"#f5f5f7", pearl:"#fafafc",
+  tile:"#272729",
+};
 /* =====================================================================
    손 크기 측정 프로토타입
    - 핵심: pxPerMm 하나가 패널 DPI / OS 배율 / 레티나 / 브라우저 줌을 전부 흡수한다.
@@ -822,8 +909,11 @@ function renderCal(){
 
   // 왼쪽 끝은 고정돼 있어야 실물과 대보기 쉽다. 기본은 본문 칼럼에 맞춰 붙이고,
   // 큰 기준물이 들어갈 폭이 모자랄 때만 왼쪽으로 밀어 자리를 만든다.
+  // 위치는 모두 calStage 자기 좌표계로 계산한다. 타일 패딩 안에 들어와 있어서
+  // 뷰포트 기준으로 재면 그 패딩만큼 어긋난다.
   const MIN_LEFT = 22, RIGHT_PAD = 46;       // RIGHT_PAD: 드래그 손잡이 여유
-  const maxW = Math.max(60, innerWidth - MIN_LEFT - RIGHT_PAD);
+  const stageL = Math.round(stage.getBoundingClientRect().left);
+  const maxW = Math.max(60, stage.clientWidth - MIN_LEFT - RIGHT_PAD);
   const atMax = st.widthPx >= maxW - 1;
   st.widthPx = clamp(st.widthPx, 40, maxW);
   st.pxPerMm = st.widthPx / r.w;
@@ -837,10 +927,10 @@ function renderCal(){
 
   $("#customRow").hidden = !r.custom;
 
-  // 칼럼 위치는 계산하지 말고 실측한다 — 스크롤바 폭 때문에 innerWidth 기준 계산은 어긋난다
-  const page = $("#s-cal .page");
-  const colLeft = Math.max(MIN_LEFT, Math.round(page.getBoundingClientRect().left) + 24);
-  const left = Math.max(MIN_LEFT, Math.min(colLeft, innerWidth - st.widthPx - RIGHT_PAD));
+  // 본문 칼럼 위치는 계산하지 말고 실측한다 (스크롤바 폭 때문에 계산은 어긋난다)
+  const page = $("#s-cal .wrap");
+  const colLeft = Math.max(MIN_LEFT, Math.round(page.getBoundingClientRect().left) - stageL);
+  const left = Math.max(MIN_LEFT, Math.min(colLeft, stage.clientWidth - st.widthPx - RIGHT_PAD));
   stage.style.paddingLeft   = left + "px";
   $("#calGuide").style.left = left + "px";
   const gl = $("#calGuideLab");
@@ -1164,8 +1254,8 @@ function drawStage(){
   const ky = HAND.pr * HAND.L;
 
   // 손 윤곽선
-  svg.appendChild(el("path", { d:handPathD(), fill:"#5b9dff14",
-    stroke:"#5b9dff", "stroke-width":2.5, "stroke-linejoin":"round" }));
+  svg.appendChild(el("path", { d:handPathD(), fill:"none",
+    stroke:C.primary, "stroke-width":2.5, "stroke-linejoin":"round" }));
 
   // 측정 기준선: 손목선 / 너클선 / 길이축
   const seg = (a, b, c, w) => {
@@ -1173,18 +1263,18 @@ function drawStage(){
     svg.appendChild(el("line", { x1:p.x, y1:p.y, x2:q.x, y2:q.y, stroke:c,
       "stroke-width":w || 2, "stroke-dasharray":"7 6" }));
   };
-  seg([-HAND.W * 0.32, 0], [HAND.W * 0.32, 0], "#5b9dff");
-  seg([-HAND.W / 2, ky], [HAND.W / 2, ky], "#ffb648");
-  seg([0, 0], [0, HAND.L], "#3ecf8e", 1.5);
+  seg([-HAND.W * 0.32, 0], [HAND.W * 0.32, 0], C.primary);
+  seg([-HAND.W / 2, ky], [HAND.W / 2, ky], C.ink48);
+  seg([0, 0], [0, HAND.L], C.primary, 1.5);
 
   // 손잡이. 측정에 쓰는 것은 손목/중지끝/너비 3종뿐이므로 그것만 크게 보여주고,
   // 손가락·엄지 미세조정(윤곽선 모양 전용)은 "세부 조정"을 켰을 때만 꺼낸다.
-  const FC = "#a99bff";
+  const FC = C.ink48;   // 세부조정 손잡이는 물러나 있어야 한다
   handles = [
-    { id:"wrist",  u:0,                  v:-OFF,         c:"#6d8fff", lab:t("hnd.wrist"), au:0,         av:0 },
-    { id:"tip",    u:0,                  v:HAND.L + OFF, c:"#3ddc97", lab:t("hnd.tip"),   au:0,         av:HAND.L },
-    { id:"kThumb", u:-(HAND.W/2 + OFF),  v:ky,           c:"#ffc24b", lab:t("hnd.width"), au:-HAND.W/2, av:ky },
-    { id:"kPinky", u:  HAND.W/2 + OFF,   v:ky,           c:"#ffc24b", lab:t("hnd.width"), au:HAND.W/2,  av:ky },
+    { id:"wrist",  u:0,                  v:-OFF,         c:C.primary, lab:t("hnd.wrist"), au:0,         av:0 },
+    { id:"tip",    u:0,                  v:HAND.L + OFF, c:C.primary, lab:t("hnd.tip"),   au:0,         av:HAND.L },
+    { id:"kThumb", u:-(HAND.W/2 + OFF),  v:ky,           c:C.primary, lab:t("hnd.width"), au:-HAND.W/2, av:ky },
+    { id:"kPinky", u:  HAND.W/2 + OFF,   v:ky,           c:C.primary, lab:t("hnd.width"), au:HAND.W/2,  av:ky },
   ];
   if(showDetail){
     [[0,t("hnd.index")],[2,t("hnd.ring")],[3,t("hnd.pinky")]].forEach(f => {
@@ -1208,13 +1298,13 @@ function drawStage(){
     const r  = h.sm ? (on ? 9 : 7) : (on ? 13 : 10);
     if(on) svg.appendChild(el("circle", { cx:p.x, cy:p.y, r:r + 7, fill:h.c, opacity:.16 }));
     svg.appendChild(el("circle", { cx:p.x, cy:p.y, r:r, fill:h.c,
-      stroke:"#0b0d12", "stroke-width":on ? 3 : 2 }));
+      stroke:C.canvas, "stroke-width":on ? 3 : 2 }));
     // 라벨 알약 — 한 글자 약어보다 읽는 부담이 훨씬 적다
     const fs  = h.sm ? 10.5 : 12;
     const wpx = h.lab.length * fs * 1.02 + 14;
     const lx  = p.x + r + 7, ly = p.y;
     svg.appendChild(el("rect", { x:lx, y:ly - fs * 0.85, width:wpx, height:fs * 1.75,
-      rx:fs * 0.875, fill:"#0b0d12", stroke:h.c, "stroke-width":1, opacity:h.sm ? .82 : .95 }));
+      rx:fs * 0.875, fill:C.canvas, stroke:h.c, "stroke-width":1, opacity:h.sm ? .82 : .95 }));
     svg.appendChild(el("text", { x:lx + wpx / 2, y:ly + fs * 0.36, "text-anchor":"middle",
       "font-size":fs, "font-weight":700, fill:h.c }, h.lab));
   });
@@ -1222,10 +1312,10 @@ function drawStage(){
   // 치수 라벨은 윤곽선 바깥에
   const ppm = st.pxPerMm;
   const lp = toStage(30, HAND.L + OFF + 34);
-  svg.appendChild(el("text", { x:lp.x, y:lp.y, fill:"#3ddc97", "font-size":13, "font-weight":750,
+  svg.appendChild(el("text", { x:lp.x, y:lp.y, fill:C.ink, "font-size":14, "font-weight":600,
     "text-anchor":"middle" }, f1(HAND.L / ppm) + " mm"));
   const wp = toStage(HAND.W / 2 + OFF, ky - 28);
-  svg.appendChild(el("text", { x:wp.x, y:wp.y, fill:"#ffc24b", "font-size":13, "font-weight":750,
+  svg.appendChild(el("text", { x:wp.x, y:wp.y, fill:C.ink, "font-size":14, "font-weight":600,
     "text-anchor":"middle" }, f1(HAND.W / ppm) + " mm"));
 }
 
@@ -1252,23 +1342,23 @@ function buildHelpFigure(){
   Object.assign(HAND, save);                        // 측정 상태 복구
 
   svg.textContent = "";
-  svg.appendChild(el("path", { d:d, fill:"#252d3d", stroke:"#5b7fa8", "stroke-width":1.5,
+  svg.appendChild(el("path", { d:d, fill:C.parchment, stroke:C.ink48, "stroke-width":1.5,
                                "stroke-linejoin":"round" }));
   const dash = (a, b, c) => svg.appendChild(el("line", { x1:a.x, y1:a.y, x2:b.x, y2:b.y,
     stroke:c, "stroke-width":2, "stroke-dasharray":"6 5" }));
-  dash(kl, kr, "#ffc24b");
-  dash(wl, wr, "#6d8fff");
-  svg.appendChild(el("line", { x1:tip.x, y1:tip.y, x2:wm.x, y2:wm.y, stroke:"#3ddc97",
+  dash(kl, kr, C.ink48);
+  dash(wl, wr, C.primary);
+  svg.appendChild(el("line", { x1:tip.x, y1:tip.y, x2:wm.x, y2:wm.y, stroke:C.primary,
     "stroke-width":1.5, "stroke-dasharray":"3 4", opacity:.7 }));
-  [[kl,"#ffc24b"],[kr,"#ffc24b"],[wl,"#6d8fff"],[wr,"#6d8fff"],[tip,"#3ddc97"]]
+  [[kl,C.ink48],[kr,C.ink48],[wl,C.primary],[wr,C.primary],[tip,C.primary]]
     .forEach(p => svg.appendChild(el("circle", { cx:p[0].x, cy:p[0].y, r:6, fill:p[1] })));
-  svg.appendChild(el("circle", { cx:wm.x, cy:wm.y, r:4.5, fill:"#6d8fff" }));
+  svg.appendChild(el("circle", { cx:wm.x, cy:wm.y, r:4.5, fill:C.primary }));
 
   const lab = (x, y, c, txt, anchor) => svg.appendChild(el("text", { x:x, y:y, fill:c,
     "font-size":12, "font-weight":700, "text-anchor":anchor || "middle" }, txt));
-  lab(tip.x, tip.y - 14, "#3ddc97", t("help.figTip"));
-  lab(kr.x + 10, kr.y + 4, "#ffc24b", t("help.figKnuckle"), "start");
-  lab(wm.x, wm.y + 24, "#6d8fff", t("help.figWrist"));
+  lab(tip.x, tip.y - 14, C.primary, t("help.figTip"));
+  lab(kr.x + 10, kr.y + 4, C.ink48, t("help.figKnuckle"), "start");
+  lab(wm.x, wm.y + 24, C.primary, t("help.figWrist"));
 
   const b = svg.getBBox(), m = 8;
   svg.setAttribute("viewBox",
@@ -1300,8 +1390,8 @@ function renderMeasureUI(){
   if(!fitsArea){
     fw.innerHTML = t("measure.fitWarn") +
       '<div class="row" style="gap:6px;margin-top:9px">' +
-        '<button class="btn-sm" id="fitFull">' + t("measure.fitFull") + '</button>' +
-        '<button class="btn-sm" id="fitAuto">' + t("measure.fitAuto") + '</button></div>';
+        '<button class="btn-pearl" id="fitFull">' + t("measure.fitFull") + '</button>' +
+        '<button class="btn-pearl" id="fitAuto">' + t("measure.fitAuto") + '</button></div>';
     $("#fitFull").onclick = () => $("#mFull").click();
     $("#fitAuto").onclick = () => { HAND.orient = "auto"; resetHand(); renderMeasureUI(); };
   }
@@ -1612,14 +1702,14 @@ function renderFit(m){
   const mCy = knuckleY - mL / 2 + mL * 0.56;     // 너클선 = 마우스 최대폭 위치
   const topSvg =
     '<svg viewBox="0 0 ' + VW + " " + VH + '" width="100%" style="display:block">' +
-    '<path d="' + mouseTopPath(m, k, cx, mCy) + '" fill="#2b3648" stroke="#9db0ce" ' +
+    '<path d="' + mouseTopPath(m, k, cx, mCy) + '" fill="' + C.parchment + '" stroke="' + C.ink48 + '" ' +
       'stroke-width="2" stroke-linejoin="round"/>' +
-    '<path d="' + handD + '" fill="none" stroke="#3ddc97" stroke-width="2" ' +
+    '<path d="' + handD + '" fill="none" stroke="' + C.primary + '" stroke-width="2" ' +
       'stroke-linejoin="round"/>' +
     '<line x1="' + (cx - mm.widthMm * k / 2 - 10) + '" y1="' + knuckleY + '" x2="' +
       (cx + Math.max(m.w, mm.widthMm) * k / 2 + 10) + '" y2="' + knuckleY +
-      '" stroke="#ffc24b" stroke-width="1.3" stroke-dasharray="5 4" opacity=".9"/>' +
-    '<text x="' + (VW - 8) + '" y="' + (VH - 6) + '" fill="#3ddc97" font-size="10.5" ' +
+      '" stroke="' + C.ink48 + '" stroke-width="1.3" stroke-dasharray="5 4" opacity=".9"/>' +
+    '<text x="' + (VW - 8) + '" y="' + (VH - 6) + '" fill="' + C.primary + '" font-size="10.5" ' +
       'font-weight="700" text-anchor="end">' + t("fit.handLab") + "</text>" +
     "</svg>";
 
@@ -1630,14 +1720,14 @@ function renderFit(m){
   const sideSvg =
     '<svg viewBox="0 0 ' + VW + " " + VH + '" width="100%" style="display:block">' +
     '<line x1="' + (sx - 18) + '" y1="' + sBase + '" x2="' + (sx + mL + 18) + '" y2="' + sBase +
-      '" stroke="#2c3444" stroke-width="2" stroke-linecap="round"/>' +
-    '<path d="' + mouseSidePath(m, k, sx, sBase) + '" fill="#2b3648" stroke="#9db0ce" ' +
+      '" stroke="' + C.hairline + '" stroke-width="2" stroke-linecap="round"/>' +
+    '<path d="' + mouseSidePath(m, k, sx, sBase) + '" fill="' + C.parchment + '" stroke="' + C.ink48 + '" ' +
       'stroke-width="2" stroke-linejoin="round"/>' +
     '<line x1="' + humpX + '" y1="' + (sBase - m.h * k) + '" x2="' + humpX + '" y2="' +
-      (sBase - m.h * k - 16) + '" stroke="#ffc24b" stroke-width="1.4"/>' +
-    '<text x="' + humpX + '" y="' + (sBase - m.h * k - 21) + '" fill="#ffc24b" font-size="10" ' +
+      (sBase - m.h * k - 16) + '" stroke="' + C.ink48 + '" stroke-width="1.4"/>' +
+    '<text x="' + humpX + '" y="' + (sBase - m.h * k - 21) + '" fill="' + C.ink48 + '" font-size="10" ' +
       'font-weight="700" text-anchor="middle">' + m.h + "mm</text>" +
-    '<text x="' + (sx + mL / 2) + '" y="' + (sBase + 16) + '" fill="#9db0ce" font-size="10.5" ' +
+    '<text x="' + (sx + mL / 2) + '" y="' + (sBase + 16) + '" fill="' + C.ink48 + '" font-size="10.5" ' +
       'text-anchor="middle">' + m.l + "mm</text>" +
     "</svg>";
 
@@ -1653,7 +1743,7 @@ function renderFit(m){
     "</div>" +
     '<div class="mwhy" style="margin-top:10px">' +
       band(m.l, T.l, "len") + band(m.w, T.w, "wid") + band(m.h, T.h, "hei") + "</div>" +
-    '<p class="sub" style="margin:12px 0 0;font-size:12px;line-height:1.65">' + t("fit.note") + "</p>";
+    '<p class="caption" style="margin:12px 0 0;font-size:12px;line-height:1.65">' + t("fit.note") + "</p>";
 }
 
 /* =====================================================================
@@ -1708,28 +1798,28 @@ function gripSvg(key){
   }[key];
 
   const band = (d, wOut, wIn) =>
-    '<path d="' + d + '" fill="none" stroke="#0b0d12" stroke-width="' + wOut +
+    '<path d="' + d + '" fill="none" stroke="' + C.canvas + '" stroke-width="' + wOut +
       '" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<path d="' + d + '" fill="none" stroke="#6d8fff" stroke-width="' + wIn +
+    '<path d="' + d + '" fill="none" stroke="' + C.primary + '" stroke-width="' + wIn +
       '" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>';
 
   return '<svg viewBox="0 0 180 128" aria-label="' + gripName(key) + '">' +
     // 바닥
-    '<line x1="4" y1="102" x2="176" y2="102" stroke="#2c3444" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="4" y1="102" x2="176" y2="102" stroke="' + C.hairline + '" stroke-width="2" stroke-linecap="round"/>' +
     // 마우스 본체 + 휠 + 버튼 경계
     '<path d="M 34 102 L 34 84 C 35 65, 49 52, 72 51 C 99 50, 128 59, 146 77 L 146 102 Z" ' +
-      'fill="#1b2130" stroke="#46536b" stroke-width="1.6" stroke-linejoin="round"/>' +
-    '<path d="M 78 51.5 L 78 58" stroke="#46536b" stroke-width="1.3" stroke-linecap="round"/>' +
-    '<ellipse cx="90" cy="52" rx="5.5" ry="2.8" fill="#46536b"/>' +
+      'fill="' + C.parchment + '" stroke="' + C.ink48 + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M 78 51.5 L 78 58" stroke="' + C.ink48 + '" stroke-width="1.3" stroke-linecap="round"/>' +
+    '<ellipse cx="90" cy="52" rx="5.5" ry="2.8" fill="' + C.ink48 + '"/>' +
     // 손
     band(G.arm, 21, 15) + G.fing.map(f => band(f, 13, 8.5)).join("") +
     // 접촉점
-    G.dots.map(d => '<circle cx="' + d[0] + '" cy="' + d[1] + '" r="4.6" fill="#3ddc97" ' +
-      'stroke="#0b0d12" stroke-width="1.6"/>').join("") +
+    G.dots.map(d => '<circle cx="' + d[0] + '" cy="' + d[1] + '" r="4.6" fill="' + C.ink + '" ' +
+      'stroke="' + C.canvas + '" stroke-width="1.6"/>').join("") +
     // 범례 + 요약
-    '<circle cx="10" cy="118" r="3.6" fill="#3ddc97"/>' +
-    '<text x="19" y="121.5" fill="#7f8ba3" font-size="8.5">' + t("grip.contact") + '</text>' +
-    '<text x="176" y="121.5" fill="#9ab4ff" font-size="9.5" font-weight="700" text-anchor="end">' +
+    '<circle cx="10" cy="118" r="3.6" fill="' + C.ink + '"/>' +
+    '<text x="19" y="121.5" fill="' + C.ink48 + '" font-size="8.5">' + t("grip.contact") + '</text>' +
+    '<text x="176" y="121.5" fill="' + C.primary + '" font-size="9.5" font-weight="700" text-anchor="end">' +
       t(G.cap) + '</text>' +
     "</svg>";
 }
@@ -1746,7 +1836,7 @@ function quizGrip(){
 function renderQuiz(){
   const g = quizGrip();
   const btn = (k, v, lab, cur) =>
-    '<button class="' + (cur === v ? "btn-pri" : "") + '" data-q="' + k + '" data-v="' + v + '">' +
+    '<button class="' + (cur === v ? "btn-primary" : "") + '" data-q="' + k + '" data-v="' + v + '">' +
     t(lab) + "</button>";
   let h = '<div class="qrow"><p>' + t("gripq.q1") + '</p><div class="qans">' +
     btn("q1", "y", "gripq.q1y", quiz.q1) + btn("q1", "n", "gripq.q1n", quiz.q1) + "</div></div>";
@@ -1872,7 +1962,7 @@ function renderCurrent(){
   out.innerHTML =
     '<div class="cmp ' + cls + '">' +
       '<div><div class="big">' + score + '<small>%</small></div>' +
-      '<div class="sub" style="margin-top:2px">' + t("cur.score") + "</div></div>" +
+      '<div class="caption" style="margin-top:2px">' + t("cur.score") + "</div></div>" +
       '<div class="txt">' + verdict + " " +
         (off.length ? off.join(" · ") + ". " + (score < 85 ? t("cur.betterBelow") : "")
                     : t("cur.allIn")) +
