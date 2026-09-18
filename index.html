@@ -116,9 +116,11 @@
   .btn-hero{background:var(--primary);color:#fff;border-radius:var(--r-pill);
             font:300 18px/1 var(--font-text);letter-spacing:0;padding:14px 28px}
   .btn-hero:hover{background:var(--primary-focus)}
-  .btn-ghost-pill{background:transparent;color:var(--primary);border:1px solid var(--primary);
-                  border-radius:var(--r-pill);padding:11px 22px}
-  .btn-ghost-pill:hover{background:var(--primary);color:#fff}
+  .btn-ghost-pill,.btn-hero-ghost{background:transparent;color:var(--primary);
+                  border:1px solid var(--primary);border-radius:var(--r-pill);padding:11px 22px}
+  .btn-ghost-pill:hover,.btn-hero-ghost:hover{background:var(--primary);color:#fff}
+  /* .btn-hero 옆에 서는 2순위 CTA. 테두리 1px만큼 padding을 깎아 두 알약의 높이를 맞춘다 */
+  .btn-hero-ghost{font:300 18px/1 var(--font-text);letter-spacing:0;padding:13px 27px}
   .btn-link{color:var(--primary);padding:0}
   .btn-link:hover{text-decoration:underline}
   .btn-dark{background:var(--ink);color:var(--on-dark);border-radius:var(--r-sm);
@@ -132,14 +134,15 @@
   .row.end{justify-content:flex-end}
   .spacer{flex:1}
   .nav{display:flex;gap:var(--s-sm);align-items:center;margin-top:var(--s-xxl)}
+  .disclosures{margin-top:var(--s-xxl)}
 
   /* ---------- configurator chips (pill) ---------- */
   .seg{display:inline-flex;gap:var(--s-xs);flex-wrap:wrap}
-  .seg button{background:var(--canvas);color:var(--ink);border:1px solid var(--hairline);
+  .seg button,.qans button{background:var(--canvas);color:var(--ink);border:1px solid var(--hairline);
               border-radius:var(--r-pill);padding:12px 16px;
               font:400 14px/1.29 var(--font-text);letter-spacing:-.224px}
-  .seg button:hover{border-color:var(--ink-48)}
-  .seg button.on{border:2px solid var(--primary-focus);padding:11px 15px;font-weight:600}
+  .seg button:hover,.qans button:hover{border-color:var(--ink-48)}
+  .seg button.on,.qans button.on{border:2px solid var(--primary-focus);padding:11px 15px;font-weight:600}
   .fld{display:grid;grid-template-columns:96px 1fr;gap:var(--s-md);align-items:center;
        padding:var(--s-xs) 0}
   .fld>label{font:400 14px/1.43 var(--font-text);letter-spacing:-.224px;color:var(--ink-80)}
@@ -340,7 +343,7 @@
   input[type=number],input[type=search],select{
         font:400 17px/1.47 var(--font-text);letter-spacing:-.374px;background:var(--canvas);
         border:1px solid rgba(0,0,0,.08);border-radius:var(--r-pill);color:var(--ink);
-        padding:12px 20px;height:44px}
+        padding:0 20px;height:44px}
   input[type=number]{width:140px;font-variant-numeric:tabular-nums}
   input[type=search]{flex:1;min-width:220px;max-width:380px}
   select{width:100%;max-width:440px;cursor:pointer}
@@ -609,11 +612,12 @@
 
   <div class="row" style="margin-top:18px">
     <button class="btn-hero" id="goGrip" data-i18n="result.goGrip"></button>
-    <button id="rAgain" data-i18n="result.again"></button>
+    <button class="btn-hero-ghost" id="rAgain" data-i18n="result.again"></button>
     <button class="btn-link" id="shareBtn" data-i18n="result.share"></button>
   </div>
   <p class="caption" id="palmEst" style="margin:10px 0 0" hidden></p>
 
+  <div class="disclosures">
   <details class="disc">
     <summary data-i18n="result.rulerSummary"></summary>
     <div class="body">
@@ -641,6 +645,7 @@
       </div>
     </div>
   </details>
+  </div>
 </div></div></section>
 
 <!-- ============== 4. GRIP ============== -->
@@ -701,7 +706,7 @@
   <div class="nav">
     <button class="btn-link" id="recBack" data-i18n="rec.back"></button>
     <div class="spacer"></div>
-    <button id="recRemeasure" data-i18n="rec.remeasure"></button>
+    <button class="btn-hero-ghost" id="recRemeasure" data-i18n="rec.remeasure"></button>
   </div>
 </div></div></section>
 
@@ -1836,7 +1841,7 @@ function quizGrip(){
 function renderQuiz(){
   const g = quizGrip();
   const btn = (k, v, lab, cur) =>
-    '<button class="' + (cur === v ? "btn-primary" : "") + '" data-q="' + k + '" data-v="' + v + '">' +
+    '<button' + (cur === v ? ' class="on"' : "") + ' data-q="' + k + '" data-v="' + v + '">' +
     t(lab) + "</button>";
   let h = '<div class="qrow"><p>' + t("gripq.q1") + '</p><div class="qans">' +
     btn("q1", "y", "gripq.q1y", quiz.q1) + btn("q1", "n", "gripq.q1n", quiz.q1) + "</div></div>";
