@@ -1833,6 +1833,25 @@ function gripSvg(key){
    정의상의 차이 두 가지만 물으면 세 그립이 갈린다:
    손바닥 뒤쪽이 닿는가(핑거팁 분리) / 손가락이 펴져 있는가 구부러졌는가(팜 vs 클로) */
 const quiz = { q1:null, q2:null };
+/* 선택 하나에 화면 전체를 innerHTML 로 다시 그리는 구조라, 누른 버튼이 그 자리에서
+   사라지고 포커스가 <body> 로 떨어진다. 키보드로 칩을 하나 고를 때마다 문서 맨 위로
+   돌아가는 셈이다. 다시 그리기 전에 누가 포커스였는지 기억해 두고 새 DOM 에 옮겨 붙인다. */
+function focusKey(el){
+  const d = el && el.dataset;
+  if(!d) return null;
+  if(d.grip) return '#gripGrid .gripcard[data-grip="' + d.grip + '"]';
+  if(d.q)    return '#quizBody button[data-q="' + d.q + '"][data-v="' + d.v + '"]';
+  if(d.f)    return '#filters button[data-f="' + d.f + '"][data-v="' + d.v + '"]';
+  if(d.fit)  return '#recList .mrow[data-fit="' + d.fit + '"]';
+  return null;
+}
+function keepFocus(render){
+  const key = focusKey(document.activeElement);
+  render();
+  const el = key && $(key);
+  if(el) el.focus({ preventScroll:true });   // 마우스 클릭이면 :focus-visible 이 아니라 링은 안 뜬다
+}
+
 function quizGrip(){
   if(quiz.q1 === "n") return "fingertip";
   if(quiz.q1 === "y" && quiz.q2) return quiz.q2 === "flat" ? "palm" : "claw";
@@ -1841,14 +1860,16 @@ function quizGrip(){
 function renderQuiz(){
   const g = quizGrip();
   const btn = (k, v, lab, cur) =>
-    '<button' + (cur === v ? ' class="on"' : "") + ' data-q="' + k + '" data-v="' + v + '">' +
+    '<button type="button"' + (cur === v ? ' class="on"' : "") +
+    ' aria-pressed="' + (cur === v) + '" data-q="' + k + '" data-v="' + v + '">' +
     t(lab) + "</button>";
-  let h = '<div class="qrow"><p>' + t("gripq.q1") + '</p><div class="qans">' +
-    btn("q1", "y", "gripq.q1y", quiz.q1) + btn("q1", "n", "gripq.q1n", quiz.q1) + "</div></div>";
+  const qrow = (k, body) =>
+    '<div class="qrow"><p id="qq-' + k + '">' + t("gripq." + k) + '</p>' +
+    '<div class="qans" role="group" aria-labelledby="qq-' + k + '">' + body + "</div></div>";
+  let h = qrow("q1", btn("q1", "y", "gripq.q1y", quiz.q1) + btn("q1", "n", "gripq.q1n", quiz.q1));
   if(quiz.q1 === "y"){
-    h += '<div class="qrow"><p>' + t("gripq.q2") + '</p><div class="qans">' +
-      btn("q2", "flat", "gripq.q2flat", quiz.q2) + btn("q2", "arch", "gripq.q2arch", quiz.q2) +
-      "</div></div>";
+    h += qrow("q2", btn("q2", "flat", "gripq.q2flat", quiz.q2) +
+                    btn("q2", "arch", "gripq.q2arch", quiz.q2));
   }
   if(g) h += '<div class="qdone">' + t("gripq.answer", { g:gripName(g) }) + "</div>";
   $("#quizBody").innerHTML = h;
@@ -1857,25 +1878,30 @@ function renderQuiz(){
     if(b.dataset.q === "q1" && b.dataset.v === "n") quiz.q2 = null;
     const ng = quizGrip();
     if(ng) pick.grip = ng;
-    renderGripScreen();
+    keepFocus(renderGripScreen);
     $("#gripQuiz").open = true;
   });
 }
 
 function renderGripScreen(){
   $("#gripGrid").innerHTML = Object.keys(GRIPS).map(k =>
-    '<button class="gripcard' + (pick.grip === k ? " on" : "") + '" data-grip="' + k + '" type="button">' +
+    '<button class="gripcard' + (pick.grip === k ? " on" : "") + '" data-grip="' + k + '" type="button"' +
+    ' aria-pressed="' + (pick.grip === k) + '">' +
     gripSvg(k) + '<div class="gn">' + gripName(k) + '</div>' +
     '<div class="gd">' + t("gripdesc." + k) + '</div></button>').join("");
-  $$("#gripGrid .gripcard").forEach(b => b.onclick = () => { pick.grip = b.dataset.grip; renderGripScreen(); });
+  $$("#gripGrid .gripcard").forEach(b => b.onclick = () => {
+    pick.grip = b.dataset.grip; keepFocus(renderGripScreen);
+  });
 
   $("#filters").innerHTML = FILTERS.map(f =>
-    '<div class="fld"><label>' + t("filter." + f.k) + '</label><div class="seg">' +
-    f.opts.map(o => '<button' + (pick[f.k] === o ? ' class="on"' : '') +
-      ' data-f="' + f.k + '" data-v="' + o + '">' + t("filter." + f.k + "." + o) +
+    '<div class="fld"><label id="fl-' + f.k + '">' + t("filter." + f.k) + '</label>' +
+    '<div class="seg" role="group" aria-labelledby="fl-' + f.k + '">' +
+    f.opts.map(o => '<button type="button"' + (pick[f.k] === o ? ' class="on"' : '') +
+      ' aria-pressed="' + (pick[f.k] === o) + '" data-f="' + f.k + '" data-v="' + o + '">' +
+      t("filter." + f.k + "." + o) +
       '</button>').join("") + '</div></div>').join("");
   $$("#filters button").forEach(b => b.onclick = () => {
-    pick[b.dataset.f] = b.dataset.v; renderGripScreen();
+    pick[b.dataset.f] = b.dataset.v; keepFocus(renderGripScreen);
   });
   renderQuiz();
 }
@@ -2012,8 +2038,10 @@ function renderRec(){
   $("#recList").innerHTML = list.slice(0, limit).map((r, i) => {
     const pct = Math.round(r.score * 100);
     const mine = r.m.id === pick.current;
+    const isOpen = r.m.id === pick.fit;
     return '<div class="mrow' + (i === 0 ? " top" : "") + (mine ? " yours" : "") +
-      (r.m.id === pick.fit ? " picked" : "") + '" data-fit="' + r.m.id + '" tabindex="0">' +
+      (isOpen ? " picked" : "") + '" data-fit="' + r.m.id + '" tabindex="0"' +
+      ' role="button" aria-expanded="' + isOpen + '" aria-controls="fitPanel">' +
       '<div class="fill" style="width:' + pct + '%"></div>' +
       '<div class="mhead"><span class="bd">' + r.m.brand + '</span>' +
       '<span class="nm">' + r.m.name + '</span>' +
@@ -2028,7 +2056,7 @@ function renderRec(){
   // 목록의 아무 줄이나 누르면 그 마우스를 내 손 위에 얹어본다
   const openFit = id => {
     pick.fit = (pick.fit === id ? "" : id);
-    renderRec();
+    keepFocus(renderRec);
     if(pick.fit){
       const el = $('.mrow[data-fit="' + pick.fit + '"]');
       if(el) el.scrollIntoView({ block:"nearest" });
