@@ -61,6 +61,7 @@ ko: {
 
   "cal.guideLab":"← 왼쪽 끝을 여기에",
   "cal.h1":"화면 보정",
+  "cal.refGroup":"기준물 고르기",
   "cal.lead":"기준물을 <b>화면에 직접 대고</b> 파란 손잡이를 끌어서 크기를 맞추세요. 한 번만 하면 이 모니터에 저장됩니다.",
   "cal.alignNote":"<b>왼쪽 끝을 파란 세로선에 맞추고</b>, 파란 손잡이로 오른쪽 끝을 맞추세요. 한쪽을 고정해야 실물과 대보기 쉽습니다.",
   "cal.fineHint":"손잡이를 클릭한 뒤 <kbd>←</kbd> <kbd>→</kbd> 로 1px씩, <kbd>Shift</kbd>+방향키로 10px씩 미세조정",
@@ -91,6 +92,7 @@ ko: {
   "ref.custom.hint":"길이를 아는 물건이면 <b>뭐든</b> 됩니다. 선을 물건에 맞춘 뒤 실제 길이를 mm로 입력하세요. 화면이 작아 큰 기준물이 안 들어갈 때 쓰세요.",
 
   "measure.title":"손 측정",
+  "measure.handGroup":"측정할 손", "measure.orientGroup":"손 방향",
   "measure.hint":"손을 윤곽선에 올리고 점 3개를 맞추세요 · 빈 곳을 끌면 손 전체가 움직입니다",
   "measure.left":"왼손", "measure.right":"오른손", "measure.auto":"자동", "measure.full":"전체화면",
   "measure.lenLbl":"손 길이", "measure.widLbl":"손 너비", "measure.palmLbl":"손바닥 길이",
@@ -250,6 +252,7 @@ en: {
 
   "cal.guideLab":"← align left edge here",
   "cal.h1":"Calibrate your screen",
+  "cal.refGroup":"Reference object",
   "cal.lead":"Hold the reference object <b>against the screen</b> and drag the blue handle until the shape matches it. Done once and saved for this monitor.",
   "cal.alignNote":"<b>Line the left edge up with the blue vertical line</b>, then drag the blue handle to match the right edge. Fixing one side makes it far easier to compare against the real object.",
   "cal.fineHint":"Click the handle, then <kbd>←</kbd> <kbd>→</kbd> for 1px steps, <kbd>Shift</kbd>+arrow for 10px",
@@ -280,6 +283,7 @@ en: {
   "ref.custom.hint":"<b>Anything</b> whose length you know. Match the line to the object, then type its real length in mm. Use this when your screen is too small for the bigger references.",
 
   "measure.title":"Measure",
+  "measure.handGroup":"Which hand", "measure.orientGroup":"Hand orientation",
   "measure.hint":"Rest your hand on the outline and match the three points · drag empty space to move the whole hand",
   "measure.left":"Left", "measure.right":"Right", "measure.auto":"Auto", "measure.full":"Fullscreen",
   "measure.lenLbl":"Hand length", "measure.widLbl":"Hand width", "measure.palmLbl":"Palm length",

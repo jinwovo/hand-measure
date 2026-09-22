@@ -477,7 +477,7 @@
   <p class="lead" data-i18n-html="cal.lead"></p>
 
   <div class="refbar">
-    <div class="seg" id="refGrid"></div>
+    <div class="seg" id="refGrid" role="group" data-i18n-aria="cal.refGroup"></div>
     <p class="caption" id="refHint" style="margin:12px 0 0"></p>
   </div>
   <div class="note info" style="margin:0 0 4px" data-i18n-html="cal.alignNote"></div>
@@ -539,13 +539,13 @@
     <div class="ttl" data-i18n="measure.title"></div>
     <div class="hint" data-i18n="measure.hint"></div>
     <div class="spacer"></div>
-    <div class="seg" style="flex-wrap:nowrap">
-      <button id="sideL" data-i18n="measure.left"></button>
-      <button id="sideR" data-i18n="measure.right"></button>
+    <div class="seg" style="flex-wrap:nowrap" role="group" data-i18n-aria="measure.handGroup">
+      <button type="button" id="sideL" data-i18n="measure.left"></button>
+      <button type="button" id="sideR" data-i18n="measure.right"></button>
     </div>
-    <div class="seg" style="flex-wrap:nowrap">
-      <button id="orDiag">45°</button><button id="orUp">90°</button>
-      <button id="orAuto" data-i18n="measure.auto"></button>
+    <div class="seg" style="flex-wrap:nowrap" role="group" data-i18n-aria="measure.orientGroup">
+      <button type="button" id="orDiag">45°</button><button type="button" id="orUp">90°</button>
+      <button type="button" id="orAuto" data-i18n="measure.auto"></button>
     </div>
     <button class="btn-pearl" id="mFull" data-i18n="measure.full"></button>
   </div>
@@ -762,6 +762,27 @@ const C = {
 
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+
+/* 선택 하나에 화면 전체를 innerHTML 로 다시 그리는 구조라, 누른 버튼이 그 자리에서
+   사라지고 포커스가 <body> 로 떨어진다. 키보드로 칩을 하나 고를 때마다 문서 맨 위로
+   돌아가는 셈이다. 다시 그리기 전에 누가 포커스였는지 기억해 두고 새 DOM 에 옮겨 붙인다. */
+function focusKey(el){
+  const d = el && el.dataset;
+  if(!d) return null;
+  if(d.grip) return '#gripGrid .gripcard[data-grip="' + d.grip + '"]';
+  if(d.q)    return '#quizBody button[data-q="' + d.q + '"][data-v="' + d.v + '"]';
+  if(d.f)    return '#filters button[data-f="' + d.f + '"][data-v="' + d.v + '"]';
+  if(d.fit)  return '#recList .mrow[data-fit="' + d.fit + '"]';
+  if(d.ref)  return '#refGrid button[data-ref="' + d.ref + '"]';
+  return null;
+}
+function keepFocus(render){
+  const key = focusKey(document.activeElement);
+  render();
+  const el = key && $(key);
+  if(el) el.focus({ preventScroll:true });   // 마우스 클릭이면 :focus-visible 이 아니라 링은 안 뜬다
+}
+
 const CAL_KEY = "hm.cal.v2";
 const LANG_KEY = "hm.lang.v1";
 
@@ -782,6 +803,7 @@ function applyI18n(){
   document.documentElement.lang = LANG;
   $$("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
   $$("[data-i18n-html]").forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
+  $$("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
   $("#langBtn").textContent = t("lang.other");
   document.title = t("doc.title");
 }
@@ -899,13 +921,13 @@ $("#zoomRecal").onclick  = () => { $("#zoomWarn").hidden = true; show("#s-cal");
 /* ============ 1. 캘리브레이션 ============ */
 function renderRefGrid(){
   $("#refGrid").innerHTML = Object.keys(REFS).map(k =>
-    '<button data-ref="' + k + '"' + (k === st.ref ? ' class="on"' : '') + '>' +
+    '<button type="button" data-ref="' + k + '"' + (k === st.ref ? ' class="on"' : '') +
+    ' aria-pressed="' + (k === st.ref) + '">' +
     refName(k) + '</button>').join("");
   $$("#refGrid button").forEach(b => b.onclick = () => {
     st.ref = b.dataset.ref;
     st.widthPx = REFS[st.ref].w * st.pxPerMm;   // 물리 크기 유지한 채 기준물만 교체
-    renderRefGrid();
-    renderCal();
+    keepFocus(() => { renderRefGrid(); renderCal(); });
   });
 }
 
@@ -1388,11 +1410,16 @@ function renderMeasureUI(){
   $("#lvWid").innerHTML  = f1(m.widthMm) + "<small>mm</small>";
   $("#lvPalm").innerHTML = f1(m.palmMm)  + "<small>mm</small>";
 
-  $("#sideL").className  = HAND.side ===  1 ? "on" : "";
-  $("#sideR").className  = HAND.side === -1 ? "on" : "";
-  $("#orDiag").className = HAND.orient === "diag" ? "on" : "";
-  $("#orUp").className   = HAND.orient === "up"   ? "on" : "";
-  $("#orAuto").className = HAND.orient === "auto" ? "on" : "";
+  const mark = (sel, on) => {
+    const b = $(sel);
+    b.className = on ? "on" : "";
+    b.setAttribute("aria-pressed", on);
+  };
+  mark("#sideL",  HAND.side ===  1);
+  mark("#sideR",  HAND.side === -1);
+  mark("#orDiag", HAND.orient === "diag");
+  mark("#orUp",   HAND.orient === "up");
+  mark("#orAuto", HAND.orient === "auto");
   $("#mDetail").textContent = showDetail ? t("measure.detailOff") : t("measure.detail");
 
   // 체크리스트 — 해당 손잡이를 한 번이라도 움직이면 완료로 표시
@@ -1846,25 +1873,6 @@ function gripSvg(key){
    정의상의 차이 두 가지만 물으면 세 그립이 갈린다:
    손바닥 뒤쪽이 닿는가(핑거팁 분리) / 손가락이 펴져 있는가 구부러졌는가(팜 vs 클로) */
 const quiz = { q1:null, q2:null };
-/* 선택 하나에 화면 전체를 innerHTML 로 다시 그리는 구조라, 누른 버튼이 그 자리에서
-   사라지고 포커스가 <body> 로 떨어진다. 키보드로 칩을 하나 고를 때마다 문서 맨 위로
-   돌아가는 셈이다. 다시 그리기 전에 누가 포커스였는지 기억해 두고 새 DOM 에 옮겨 붙인다. */
-function focusKey(el){
-  const d = el && el.dataset;
-  if(!d) return null;
-  if(d.grip) return '#gripGrid .gripcard[data-grip="' + d.grip + '"]';
-  if(d.q)    return '#quizBody button[data-q="' + d.q + '"][data-v="' + d.v + '"]';
-  if(d.f)    return '#filters button[data-f="' + d.f + '"][data-v="' + d.v + '"]';
-  if(d.fit)  return '#recList .mrow[data-fit="' + d.fit + '"]';
-  return null;
-}
-function keepFocus(render){
-  const key = focusKey(document.activeElement);
-  render();
-  const el = key && $(key);
-  if(el) el.focus({ preventScroll:true });   // 마우스 클릭이면 :focus-visible 이 아니라 링은 안 뜬다
-}
-
 function quizGrip(){
   if(quiz.q1 === "n") return "fingertip";
   if(quiz.q1 === "y" && quiz.q2) return quiz.q2 === "flat" ? "palm" : "claw";
@@ -2101,6 +2109,9 @@ function show(id){
   $$("#stepper .stp").forEach(el => {
     const i = +el.dataset.st;
     el.className = "stp" + (i === n ? " on" : i < n ? " done" : "");
+    // 현재 단계가 굵은 글씨로만 표시되면 화면 밖에서는 알 길이 없다
+    if(i === n) el.setAttribute("aria-current", "step");
+    else el.removeAttribute("aria-current");
   });
   if(id !== "#s-measure") scrollTo(0, 0);
 }
