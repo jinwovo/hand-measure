@@ -798,6 +798,7 @@ function setLang(l){
   if(!$("#s-rec").hidden) renderRec();
   if(!$("#help").hidden) buildHelpFigure();
   if(!$("#zoomWarn").hidden) checkDrift();
+  renderSmallWarn();
   refreshSaved();
 }
 
@@ -1164,11 +1165,22 @@ function setManual(len, wid){
   manual = { lenMm:len, widthMm:wid, palmMm:len * DEF.pr, est:true };
 }
 
-/** 이 화면이 실제 크기 손을 담을 수 있는가. 폰은 원리적으로 불가능하다. */
-function screenTooSmall(){
+/** 이 화면이 실제 크기 손을 담을 수 있는가.
+    "못 담는다" 와 "폰이라 원리적으로 불가능하다" 는 서로 다른 이야기다. 데스크톱에서
+    창을 낮게 띄운 경우가 훨씬 흔하고 그건 창만 키우면 끝난다. 한쪽 변이 넉넉한데
+    다른 쪽이 모자라면 기기가 아니라 창 문제로 본다. */
+function screenFit(){
   const ppm = st.pxPerMm || guessPxPerMm();
   const w = innerWidth / ppm, h = innerHeight / ppm;      // mm
-  return !((w >= 200 && h >= 120) || (w >= 120 && h >= 200));
+  if((w >= 200 && h >= 120) || (w >= 120 && h >= 200)) return "ok";
+  return (w >= 200 || h >= 200) ? "window" : "device";
+}
+/* 한 번만 그리면 창을 키워도 경고가 남고, 언어를 바꿔도 앞 언어가 남는다.
+   크기가 바뀔 때와 언어가 바뀔 때 같이 불린다. */
+function renderSmallWarn(){
+  const sw = $("#smallWarn"), fit = screenFit();
+  sw.hidden = fit === "ok";
+  if(!sw.hidden) sw.innerHTML = t(fit === "window" ? "intro.smallWindow" : "intro.small");
 }
 
 /* ---- 결과를 URL 에 담아 공유/북마크 가능하게 ---- */
@@ -1539,6 +1551,7 @@ addEventListener("keydown", e => {
 addEventListener("resize", () => {
   if(!$("#s-cal").hidden)     renderCal();
   if(!$("#s-measure").hidden) layoutStage();
+  renderSmallWarn();
   checkDrift();
 });
 
@@ -2187,9 +2200,7 @@ function refreshSaved(){
   }
   refreshSaved();
 
-  const sw = $("#smallWarn");
-  sw.hidden = !screenTooSmall();
-  if(!sw.hidden) sw.innerHTML = t("intro.small");
+  renderSmallWarn();
 
   if(readHash()){ show("#s-result"); renderResult(); }   // 공유 링크로 들어온 경우
   else show("#s-intro");
